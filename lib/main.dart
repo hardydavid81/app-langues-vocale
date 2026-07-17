@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:http/http.dart' as http;
+import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:convert';
 
 const String geminiApiKey = "AQ.Ab8RN6LqDp3vKeNX7qCzGe-mSVuFFb8MmHmkxg-CqNe8ekC4yw";
@@ -29,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final stt.SpeechToText _speech = stt.SpeechToText();
+  final FlutterTts _tts = FlutterTts();
   bool _isListening = false;
   bool _isThinking = false;
   String _userText = "";
@@ -68,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _aiText = reply;
           _isThinking = false;
         });
+        await _tts.speak(reply);
       } else {
         setState(() {
           _aiText = "Erreur API code " + response.statusCode.toString();
