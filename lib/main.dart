@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$geminiApiKey',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$geminiApiKey',
       );
       final response = await http.post(
         url,
