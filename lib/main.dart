@@ -35,7 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _aiText = "Appuyez sur le micro et parlez";
 
   Future<void> _askGemini(String userMessage) async {
-    setState(() => _isThinking = true);
+    setState(() {
+      _isThinking = true;
+    });
     try {
       final url = Uri.parse(
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$geminiApiKey',
@@ -49,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
               "parts": [
                 {
                   "text":
-                      "Tu es un partenaire de conversation pour apprendre les langues. Réponds toujours dans la même langue que l'utilisateur, de façon naturelle et courte (2-3 phrases max). Message de l'utilisateur : $userMessage"
+                      "Tu es un partenaire de conversation pour apprendre les langues. Reponds toujours dans la meme langue que l'utilisateur, de facon naturelle et courte, deux ou trois phrases maximum. Message de l'utilisateur : $userMessage"
                 }
               ]
             }
@@ -65,13 +67,13 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       } else {
         setState(() {
-          _aiText = "Erreur API (${response.statusCode})";
+          _aiText = "Erreur API code " + response.statusCode.toString();
           _isThinking = false;
         });
       }
     } catch (e) {
       setState(() {
-        _aiText = "Erreur : $e";
+        _aiText = "Erreur : " + e.toString();
         _isThinking = false;
       });
     }
@@ -94,7 +96,9 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } else {
-      setState(() => _isListening = false);
+      setState(() {
+        _isListening = false;
+      });
       await _speech.stop();
       if (_userText.isNotEmpty) {
         _askGemini(_userText);
@@ -107,4 +111,41 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('App Langues Vocale')),
       body: Center(
-        child: Pad
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _userText.isEmpty ? "" : "Vous : " + _userText,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              _isThinking
+                  ? const CircularProgressIndicator()
+                  : Text(
+                      _aiText,
+                      style: const TextStyle(fontSize: 20),
+                      textAlign: TextAlign.center,
+                    ),
+              const SizedBox(height: 40),
+              GestureDetector(
+                onTap: _listen,
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: _isListening ? Colors.red : Colors.blue,
+                  child: const Icon(
+                    Icons.mic,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
