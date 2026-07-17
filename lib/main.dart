@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:convert';
 
-const String geminiApiKey = "AQ.Ab8RN6LqDp3vKeNX7qCzGe-mSVuFFb8MmHmkxg-CqNe8ekC4yw";
+const String geminiApiKey = "AQ.Ab8RN6IE3ZQOi5FJlFdRxwZHyM9OC_PLACEHOLDER";
 
 void main() {
   runApp(const MyApp());
