@@ -43,6 +43,18 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userText = "";
   final List<ChatMessage> _messages = [];
 
+  final List<String> _languages = [
+    "Anglais",
+    "Espagnol",
+    "Italien",
+    "Allemand",
+    "Portugais",
+    "Arabe",
+    "Japonais",
+    "Chinois",
+  ];
+  String _selectedLanguage = "Anglais";
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
@@ -77,7 +89,12 @@ class _HomeScreenState extends State<HomeScreen> {
               "parts": [
                 {
                   "text":
-                      "Tu es un partenaire de conversation pour apprendre les langues. Reponds toujours dans la meme langue que l'utilisateur, de facon naturelle et courte, deux ou trois phrases maximum. Message de l'utilisateur : $userMessage"
+                      "Tu es un partenaire de conversation pour apprendre les langues. L'utilisateur pratique le " +
+                          _selectedLanguage +
+                          ". Reponds TOUJOURS en " +
+                          _selectedLanguage +
+                          " uniquement, meme si l'utilisateur ecrit dans une autre langue, de facon naturelle et courte, deux ou trois phrases maximum. Message de l'utilisateur : " +
+                          userMessage
                 }
               ]
             }
@@ -164,15 +181,46 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('App Langues Vocale')),
+      appBar: AppBar(
+        title: const Text('App Langues Vocale'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Center(
+              child: DropdownButton<String>(
+                value: _selectedLanguage,
+                dropdownColor: Colors.blue,
+                underline: const SizedBox(),
+                icon: const Icon(Icons.language, color: Colors.white),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedLanguage = newValue;
+                    });
+                  }
+                },
+                items: _languages.map<DropdownMenuItem<String>>((String lang) {
+                  return DropdownMenuItem<String>(
+                    value: lang,
+                    child: Text(lang),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
             child: _messages.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      "Appuyez sur le micro et parlez",
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      "Vous pratiquez : " +
+                          _selectedLanguage +
+                          "\nAppuyez sur le micro et parlez",
+                      style: const TextStyle(fontSize: 18, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
                   )
