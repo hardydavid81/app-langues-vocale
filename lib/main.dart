@@ -66,6 +66,82 @@ const List<Character> characters = [
   ),
 ];
 
+class WalkingCat extends StatefulWidget {
+  final double startX;
+  final double startY;
+  const WalkingCat({super.key, required this.startX, required this.startY});
+
+  @override
+  State<WalkingCat> createState() => _WalkingCatState();
+}
+
+class _WalkingCatState extends State<WalkingCat> {
+  late double _x;
+  late double _y;
+  bool _facingRight = true;
+  Duration _duration = const Duration(seconds: 3);
+
+  @override
+  void initState() {
+    super.initState();
+    _x = widget.startX;
+    _y = widget.startY;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _walkToNewSpot());
+  }
+
+  void _walkToNewSpot() {
+    if (!mounted) return;
+    final size = MediaQuery.of(context).size;
+    final newX = 10 + (size.width - 60) * (DateTime.now().microsecond % 1000) / 1000;
+    final newY = size.height * 0.5 +
+        (size.height * 0.35) * ((DateTime.now().millisecond % 1000) / 1000);
+    final distance = (newX - _x).abs();
+    setState(() {
+      _facingRight = newX > _x;
+      _duration = Duration(milliseconds: 2000 + (distance * 15).toInt());
+      _x = newX;
+      _y = newY;
+    });
+    Future.delayed(
+      _duration + Duration(milliseconds: 1500 + (DateTime.now().second % 5) * 500),
+      _walkToNewSpot,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPositioned(
+      duration: _duration,
+      curve: Curves.easeInOut,
+      left: _x,
+      top: _y,
+      child: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.rotationY(_facingRight ? 0 : 3.1416),
+        child: const Text("🐱", style: TextStyle(fontSize: 28)),
+      ),
+    );
+  }
+}
+
+class WalkingCatsBackground extends StatelessWidget {
+  const WalkingCatsBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          WalkingCat(startX: size.width * 0.2, startY: size.height * 0.6),
+          WalkingCat(startX: size.width * 0.6, startY: size.height * 0.7),
+          WalkingCat(startX: size.width * 0.8, startY: size.height * 0.55),
+        ],
+      ),
+    );
+  }
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -281,51 +357,56 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: _messages.isEmpty
-                ? Center(
-                    child: Text(
-                      "Vous pratiquez : " +
-                          _selectedLanguage +
-                          " avec " +
-                          _selectedCharacter.emoji +
-                          " " +
-                          _selectedCharacter.name +
-                          "\nAppuyez sur le micro et parlez",
-                      style: const TextStyle(fontSize: 18, color: Colors.grey),
-                      textAlign: TextAlign.center,
+          const Positioned.fill(child: WalkingCatsBackground()),
+          Column(
+            children: [
+              Expanded(
+                child: _messages.isEmpty
+                    ? Center(
+                        child: Text(
+                          "Vous pratiquez : " +
+                              _selectedLanguage +
+                              " avec " +
+                              _selectedCharacter.emoji +
+                              " " +
+                              _selectedCharacter.name +
+                              "\nAppuyez sur le micro et parlez",
+                          style: const TextStyle(fontSize: 18, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          return _buildBubble(_messages[index]);
+                        },
+                      ),
+              ),
+              if (_isThinking)
+                const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: CircularProgressIndicator(),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: GestureDetector(
+                  onTap: _listen,
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: _isListening ? Colors.red : Colors.blue,
+                    child: const Icon(
+                      Icons.mic,
+                      size: 44,
+                      color: Colors.white,
                     ),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _buildBubble(_messages[index]);
-                    },
                   ),
-          ),
-          if (_isThinking)
-            const Padding(
-              padding: EdgeInsets.all(12.0),
-              child: CircularProgressIndicator(),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: GestureDetector(
-              onTap: _listen,
-              child: CircleAvatar(
-                radius: 36,
-                backgroundColor: _isListening ? Colors.red : Colors.blue,
-                child: const Icon(
-                  Icons.mic,
-                  size: 44,
-                  color: Colors.white,
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
