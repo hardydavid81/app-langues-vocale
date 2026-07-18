@@ -158,6 +158,49 @@ final List<Map<String, String>> _englishPhrases = [
   {"word": "Slower please", "fr": "Plus lentement s'il te plaît"},
   {"word": "It's delicious", "fr": "C'est délicieux"},
   {"word": "Congratulations", "fr": "Félicitations"},
+  {"word": "All ears", "fr": "Tout ouïe"},
+  {"word": "Cross one's fingers", "fr": "Croiser les doigts"},
+  {"word": "Beat around the bush", "fr": "Tourner autour du pot"},
+  {"word": "A piece of cake", "fr": "Du gâteau (très facile)"},
+  {"word": "Feel under the weather", "fr": "Ne pas se sentir bien"},
+  {"word": "Go round in circles", "fr": "Tourner en rond"},
+  {"word": "Sleep on it", "fr": "La nuit porte conseil"},
+  {"word": "To be broke", "fr": "Être fauché"},
+  {"word": "Know it like the back of one's hand", "fr": "Connaître comme sa poche"},
+  {"word": "Once in a blue moon", "fr": "Tous les 36 du mois"},
+  {"word": "Out of the blue", "fr": "Sans crier gare"},
+  {"word": "The cream of the crop", "fr": "La crème de la crème"},
+  {"word": "An early bird", "fr": "Un lève-tôt"},
+  {"word": "A cock and bull story", "fr": "Une histoire à dormir debout"},
+  {"word": "It's raining cats and dogs", "fr": "Il pleut des cordes"},
+  {"word": "Storm in a teacup", "fr": "Une tempête dans un verre d'eau"},
+  {"word": "Rings a bell", "fr": "Ça me dit quelque chose"},
+  {"word": "We are in deep water", "fr": "On est dans le pétrin"},
+  {"word": "As good as gold", "fr": "Sage comme une image"},
+  {"word": "Spill the beans", "fr": "Vendre la mèche"},
+  {"word": "Get cold feet", "fr": "Avoir le trac"},
+  {"word": "Icing on the cake", "fr": "La cerise sur le gâteau"},
+  {"word": "Work one's fingers to the bone", "fr": "Travailler d'arrache-pied"},
+  {"word": "It's not my cup of tea", "fr": "Ce n'est pas ma tasse de thé"},
+  {"word": "Seize the day", "fr": "Profite du moment présent"},
+  {"word": "Don't judge a book by its cover", "fr": "Ne pas se fier aux apparences"},
+  {"word": "Kill two birds with one stone", "fr": "Faire d'une pierre deux coups"},
+  {"word": "Like father, like son", "fr": "Tel père, tel fils"},
+  {"word": "When pigs fly", "fr": "Quand les poules auront des dents"},
+  {"word": "Tit for tat", "fr": "Œil pour œil, dent pour dent"},
+  {"word": "Better late than never", "fr": "Mieux vaut tard que jamais"},
+  {"word": "The early bird catches the worm", "fr": "Le monde appartient à celui qui se lève tôt"},
+  {"word": "Put the cart before the horse", "fr": "Mettre la charrue avant les bœufs"},
+  {"word": "You can't have your cake and eat it", "fr": "On ne peut pas avoir le beurre et l'argent du beurre"},
+  {"word": "I can't believe it!", "fr": "Je n'en crois pas mes yeux !"},
+  {"word": "Never mind!", "fr": "Ne t'en fais pas !"},
+  {"word": "It's up to you!", "fr": "C'est à toi de décider !"},
+  {"word": "Keep cool!", "fr": "On se calme !"},
+  {"word": "Break a leg!", "fr": "Bonne chance !"},
+  {"word": "So far so good!", "fr": "Jusqu'ici tout va bien !"},
+  {"word": "Pull yourself together!", "fr": "Calme-toi !"},
+  {"word": "Speak of the devil!", "fr": "Quand on parle du loup !"},
+  {"word": "My foot!", "fr": "Mon œil !"},
 ];
 
 final List<Map<String, String>> _englishNumbers = [
@@ -637,7 +680,9 @@ class _WalkingCatState extends State<WalkingCat> {
         children: [
           if (_bubbleWord != null)
             Positioned(
-              top: -70,
+              top: widget.catSize.height * 0.38,
+              left: widget.facingRight ? -(widget.catSize.width * 0.62) : null,
+              right: widget.facingRight ? null : -(widget.catSize.width * 0.62),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
@@ -797,19 +842,38 @@ class _HomeScreenState extends State<HomeScreen> {
               "parts": [
                 {
                   "text":
-                      "Traduis le texte suivant entre le francais et l'anglais : si le texte est en francais, traduis-le en anglais ; si le texte est en anglais, traduis-le en francais. Reponds UNIQUEMENT avec la traduction, sans aucune explication, sans guillemets. Texte : " +
+                      "Traduis integralement le texte suivant entre le francais et l'anglais : si le texte est en francais, traduis-le en anglais ; si le texte est en anglais, traduis-le en francais. Ne raccourcis jamais la phrase, traduis-la en entier du debut a la fin. Reponds UNIQUEMENT avec la traduction complete, sans aucune explication, sans guillemets. Texte : " +
                           trimmed
                 }
               ]
             }
-          ]
+          ],
+          "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 256
+          }
         }),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final translated =
-            (data['candidates'][0]['content']['parts'][0]['text'] as String)
+        final candidates = data['candidates'] as List?;
+        String translated = "";
+        if (candidates != null && candidates.isNotEmpty) {
+          final parts = candidates[0]['content']?['parts'] as List?;
+          if (parts != null) {
+            translated = parts
+                .map((p) => (p['text'] ?? "").toString())
+                .join()
                 .trim();
+          }
+        }
+        if (translated.isEmpty) {
+          setState(() {
+            _errorText = "Traduction vide, réessaie.";
+            _isTranslating = false;
+          });
+          return;
+        }
         setState(() {
           _translation = translated;
           _isTranslating = false;
