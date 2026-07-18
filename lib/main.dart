@@ -25,6 +25,47 @@ class ChatMessage {
   ChatMessage(this.text, this.isUser);
 }
 
+class Character {
+  final String name;
+  final String emoji;
+  final String personality;
+  final String ttsLocale;
+  const Character(this.name, this.emoji, this.personality, this.ttsLocale);
+}
+
+const List<Character> characters = [
+  Character(
+    "Pierre",
+    "🇫🇷",
+    "Tu es Pierre, un Parisien blasé et un peu snob. Tu soupires souvent, tu trouves tout 'pas terrible', et tu glisses des mots français par-ci par-là même en parlant la langue cible.",
+    "fr-FR",
+  ),
+  Character(
+    "Kevin",
+    "🤠",
+    "Tu es Kevin, un cowboy texan hyper enthousiaste. Tu dis 'yeehaw', tu compares tout à des chevaux ou du barbecue, et tu es exagérément amical.",
+    "en-US",
+  ),
+  Character(
+    "Giovanni",
+    "🇮🇹",
+    "Tu es Giovanni, un Italien passionné et dramatique. Tu parles avec de grands gestes (decris-les entre parentheses), tu t'exclames souvent 'Mamma mia!', et tu adores la nourriture.",
+    "it-IT",
+  ),
+  Character(
+    "Yuki",
+    "🇯🇵",
+    "Tu es Yuki, energique et suraigüe, style personnage d'anime. Tu es toujours super enthousiaste, tu utilises plein de kawaii et de superlatifs.",
+    "ja-JP",
+  ),
+  Character(
+    "Angus",
+    "🏴",
+    "Tu es Angus, un Ecossais bourru des Highlands. Tu es direct, un peu grognon mais chaleureux au fond, et tu mentionnes souvent le mauvais temps ou le whisky.",
+    "en-GB",
+  ),
+];
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -52,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     "Chinois",
   ];
   String _selectedLanguage = "Anglais";
+  Character _selectedCharacter = characters[0];
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -86,11 +128,13 @@ class _HomeScreenState extends State<HomeScreen> {
               "parts": [
                 {
                   "text":
-                      "Tu es un partenaire de conversation pour apprendre les langues. L'utilisateur pratique le " +
+                      "Tu es un partenaire de conversation pour apprendre les langues. " +
+                          _selectedCharacter.personality +
+                          " L'utilisateur pratique le " +
                           _selectedLanguage +
                           ". Reponds TOUJOURS en " +
                           _selectedLanguage +
-                          " uniquement, meme si l'utilisateur ecrit dans une autre langue, de facon naturelle et courte, deux ou trois phrases maximum. Message de l'utilisateur : " +
+                          " uniquement, meme si l'utilisateur ecrit dans une autre langue, en restant dans ton personnage, de facon courte, deux ou trois phrases maximum. Message de l'utilisateur : " +
                           userMessage
                 }
               ]
@@ -106,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isThinking = false;
         });
         _scrollToBottom();
+        await _tts.setLanguage(_selectedCharacter.ttsLocale);
         await _tts.speak(reply);
       } else {
         setState(() {
@@ -186,6 +231,30 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('App Langues Vocale'),
         actions: [
           Padding(
+            padding: const EdgeInsets.only(right: 4.0),
+            child: Center(
+              child: DropdownButton<Character>(
+                value: _selectedCharacter,
+                dropdownColor: Colors.blue,
+                underline: const SizedBox(),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                onChanged: (Character? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedCharacter = newValue;
+                    });
+                  }
+                },
+                items: characters.map<DropdownMenuItem<Character>>((Character c) {
+                  return DropdownMenuItem<Character>(
+                    value: c,
+                    child: Text(c.emoji + " " + c.name),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: Center(
               child: DropdownButton<String>(
@@ -220,6 +289,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       "Vous pratiquez : " +
                           _selectedLanguage +
+                          " avec " +
+                          _selectedCharacter.emoji +
+                          " " +
+                          _selectedCharacter.name +
                           "\nAppuyez sur le micro et parlez",
                       style: const TextStyle(fontSize: 18, color: Colors.grey),
                       textAlign: TextAlign.center,
