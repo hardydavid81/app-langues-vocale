@@ -67,500 +67,161 @@ const List<Character> characters = [
   ),
 ];
 
+// Uniquement 2 langues pour cette version de l'app : Anglais et Français.
+// Pour une autre paire de langues, il suffit de dupliquer ce fichier et de
+// changer languageLocales, _languages, et le contenu des banques ci-dessous.
 final Map<String, String> languageLocales = {
   "Anglais": "en-US",
-  "Espagnol": "es-ES",
-  "Italien": "it-IT",
-  "Allemand": "de-DE",
-  "Portugais": "pt-PT",
-  "Arabe": "ar-SA",
-  "Japonais": "ja-JP",
-  "Chinois": "zh-CN",
+  "Français": "fr-FR",
 };
 
 final math.Random _rng = math.Random();
 
+// Chaque entrée : "word" = mot dans la langue pratiquée, "fr" = traduction française.
+// Pour la banque "Français", on dérive automatiquement l'inverse de la banque
+// "Anglais" (word=français, fr=anglais) pour éviter de dupliquer les données.
+List<Map<String, String>> _deriveFrench(List<Map<String, String>> englishList) {
+  return englishList.map((e) => {"word": e["fr"]!, "fr": e["word"]!}).toList();
+}
+
+final List<Map<String, String>> _englishWords = [
+  {"word": "Hello", "fr": "Bonjour"},
+  {"word": "Cat", "fr": "Chat"},
+  {"word": "Friend", "fr": "Ami"},
+  {"word": "Happy", "fr": "Heureux"},
+  {"word": "Water", "fr": "Eau"},
+  {"word": "Beautiful", "fr": "Beau"},
+  {"word": "House", "fr": "Maison"},
+  {"word": "Dog", "fr": "Chien"},
+  {"word": "Sun", "fr": "Soleil"},
+  {"word": "Moon", "fr": "Lune"},
+  {"word": "Book", "fr": "Livre"},
+  {"word": "Love", "fr": "Amour"},
+  {"word": "Time", "fr": "Temps"},
+  {"word": "Food", "fr": "Nourriture"},
+  {"word": "Family", "fr": "Famille"},
+  {"word": "Bread", "fr": "Pain"},
+  {"word": "Music", "fr": "Musique"},
+  {"word": "Tree", "fr": "Arbre"},
+  {"word": "Sea", "fr": "Mer"},
+  {"word": "Sky", "fr": "Ciel"},
+  {"word": "Bird", "fr": "Oiseau"},
+  {"word": "Flower", "fr": "Fleur"},
+  {"word": "School", "fr": "École"},
+  {"word": "Work", "fr": "Travail"},
+  {"word": "Night", "fr": "Nuit"},
+  {"word": "Day", "fr": "Jour"},
+  {"word": "Good", "fr": "Bon"},
+  {"word": "Big", "fr": "Grand"},
+  {"word": "Small", "fr": "Petit"},
+  {"word": "Fast", "fr": "Rapide"},
+  {"word": "Slow", "fr": "Lent"},
+  {"word": "Color", "fr": "Couleur"},
+  {"word": "Red", "fr": "Rouge"},
+  {"word": "Blue", "fr": "Bleu"},
+  {"word": "Green", "fr": "Vert"},
+  {"word": "Mother", "fr": "Mère"},
+  {"word": "Father", "fr": "Père"},
+  {"word": "Brother", "fr": "Frère"},
+  {"word": "Sister", "fr": "Sœur"},
+  {"word": "Child", "fr": "Enfant"},
+  {"word": "Head", "fr": "Tête"},
+  {"word": "Hand", "fr": "Main"},
+  {"word": "Eye", "fr": "Œil"},
+  {"word": "Mouth", "fr": "Bouche"},
+  {"word": "Rain", "fr": "Pluie"},
+  {"word": "Wind", "fr": "Vent"},
+  {"word": "Snow", "fr": "Neige"},
+  {"word": "Today", "fr": "Aujourd'hui"},
+  {"word": "Tomorrow", "fr": "Demain"},
+  {"word": "Yesterday", "fr": "Hier"},
+  {"word": "Thanks", "fr": "Merci"},
+  {"word": "Please", "fr": "S'il vous plaît"},
+  {"word": "Yes", "fr": "Oui"},
+  {"word": "No", "fr": "Non"},
+  {"word": "Sorry", "fr": "Désolé"},
+  {"word": "Name", "fr": "Nom"},
+];
+
+final List<Map<String, String>> _englishPhrases = [
+  {"word": "How are you?", "fr": "Comment vas-tu ?"},
+  {"word": "What is your name?", "fr": "Comment tu t'appelles ?"},
+  {"word": "Nice to meet you", "fr": "Enchanté"},
+  {"word": "I don't understand", "fr": "Je ne comprends pas"},
+  {"word": "Can you help me?", "fr": "Peux-tu m'aider ?"},
+  {"word": "Where is the bathroom?", "fr": "Où sont les toilettes ?"},
+  {"word": "How much is it?", "fr": "Combien ça coûte ?"},
+  {"word": "I would like...", "fr": "Je voudrais..."},
+  {"word": "See you later", "fr": "À plus tard"},
+  {"word": "Have a good day", "fr": "Bonne journée"},
+  {"word": "What time is it?", "fr": "Quelle heure est-il ?"},
+  {"word": "I am hungry", "fr": "J'ai faim"},
+  {"word": "I am thirsty", "fr": "J'ai soif"},
+  {"word": "I am tired", "fr": "Je suis fatigué"},
+  {"word": "Where are you from?", "fr": "D'où viens-tu ?"},
+  {"word": "I speak a little", "fr": "Je parle un peu"},
+  {"word": "Can you repeat?", "fr": "Peux-tu répéter ?"},
+  {"word": "Slower please", "fr": "Plus lentement s'il te plaît"},
+  {"word": "It's delicious", "fr": "C'est délicieux"},
+  {"word": "Congratulations", "fr": "Félicitations"},
+];
+
+final List<Map<String, String>> _englishNumbers = [
+  {"word": "One", "fr": "Un"},
+  {"word": "Two", "fr": "Deux"},
+  {"word": "Three", "fr": "Trois"},
+  {"word": "Four", "fr": "Quatre"},
+  {"word": "Five", "fr": "Cinq"},
+  {"word": "Six", "fr": "Six"},
+  {"word": "Seven", "fr": "Sept"},
+  {"word": "Eight", "fr": "Huit"},
+  {"word": "Nine", "fr": "Neuf"},
+  {"word": "Ten", "fr": "Dix"},
+  {"word": "Twenty", "fr": "Vingt"},
+  {"word": "Fifty", "fr": "Cinquante"},
+  {"word": "Hundred", "fr": "Cent"},
+  {"word": "Thousand", "fr": "Mille"},
+];
+
+final List<Map<String, String>> _englishVerbs = [
+  {"word": "To eat", "fr": "Manger"},
+  {"word": "To drink", "fr": "Boire"},
+  {"word": "To sleep", "fr": "Dormir"},
+  {"word": "To walk", "fr": "Marcher"},
+  {"word": "To speak", "fr": "Parler"},
+  {"word": "To see", "fr": "Voir"},
+  {"word": "To come", "fr": "Venir"},
+  {"word": "To go", "fr": "Aller"},
+  {"word": "To read", "fr": "Lire"},
+  {"word": "To write", "fr": "Écrire"},
+  {"word": "To think", "fr": "Penser"},
+  {"word": "To want", "fr": "Vouloir"},
+  {"word": "To need", "fr": "Avoir besoin"},
+  {"word": "To love", "fr": "Aimer"},
+  {"word": "To work", "fr": "Travailler"},
+  {"word": "To play", "fr": "Jouer"},
+  {"word": "To learn", "fr": "Apprendre"},
+  {"word": "To buy", "fr": "Acheter"},
+];
+
 final Map<String, List<Map<String, String>>> wordBank = {
-  "Anglais": [
-    {"word": "Hello", "fr": "Bonjour"},
-    {"word": "Cat", "fr": "Chat"},
-    {"word": "Friend", "fr": "Ami"},
-    {"word": "Happy", "fr": "Heureux"},
-    {"word": "Water", "fr": "Eau"},
-    {"word": "Beautiful", "fr": "Beau/Belle"},
-    {"word": "House", "fr": "Maison"},
-    {"word": "Dog", "fr": "Chien"},
-    {"word": "Sun", "fr": "Soleil"},
-    {"word": "Moon", "fr": "Lune"},
-    {"word": "Book", "fr": "Livre"},
-    {"word": "Love", "fr": "Amour"},
-    {"word": "Time", "fr": "Temps"},
-    {"word": "Food", "fr": "Nourriture"},
-    {"word": "Family", "fr": "Famille"},
-    {"word": "Bread", "fr": "Pain"},
-    {"word": "Music", "fr": "Musique"},
-    {"word": "Tree", "fr": "Arbre"},
-    {"word": "Sea", "fr": "Mer"},
-    {"word": "Sky", "fr": "Ciel"},
-    {"word": "Bird", "fr": "Oiseau"},
-    {"word": "Flower", "fr": "Fleur"},
-    {"word": "School", "fr": "École"},
-    {"word": "Work", "fr": "Travail"},
-    {"word": "Night", "fr": "Nuit"},
-    {"word": "Day", "fr": "Jour"},
-    {"word": "Good", "fr": "Bon"},
-    {"word": "Big", "fr": "Grand"},
-    {"word": "Small", "fr": "Petit"},
-    {"word": "Fast", "fr": "Rapide"},
-    {"word": "Slow", "fr": "Lent"},
-    {"word": "Color", "fr": "Couleur"},
-    {"word": "Red", "fr": "Rouge"},
-    {"word": "Blue", "fr": "Bleu"},
-    {"word": "Green", "fr": "Vert"},
-    {"word": "One", "fr": "Un"},
-    {"word": "Two", "fr": "Deux"},
-    {"word": "Three", "fr": "Trois"},
-    {"word": "Four", "fr": "Quatre"},
-    {"word": "Five", "fr": "Cinq"},
-    {"word": "Mother", "fr": "Mère"},
-    {"word": "Father", "fr": "Père"},
-    {"word": "Brother", "fr": "Frère"},
-    {"word": "Sister", "fr": "Sœur"},
-    {"word": "Child", "fr": "Enfant"},
-    {"word": "Eat", "fr": "Manger"},
-    {"word": "Drink", "fr": "Boire"},
-    {"word": "Sleep", "fr": "Dormir"},
-    {"word": "Walk", "fr": "Marcher"},
-    {"word": "Speak", "fr": "Parler"},
-    {"word": "See", "fr": "Voir"},
-    {"word": "Come", "fr": "Venir"},
-    {"word": "Go", "fr": "Aller"},
-    {"word": "Head", "fr": "Tête"},
-    {"word": "Hand", "fr": "Main"},
-    {"word": "Eye", "fr": "Œil"},
-    {"word": "Mouth", "fr": "Bouche"},
-    {"word": "Rain", "fr": "Pluie"},
-    {"word": "Wind", "fr": "Vent"},
-    {"word": "Snow", "fr": "Neige"},
-    {"word": "Today", "fr": "Aujourd'hui"},
-    {"word": "Tomorrow", "fr": "Demain"},
-    {"word": "Yesterday", "fr": "Hier"},
-    {"word": "Thanks", "fr": "Merci"},
-    {"word": "Please", "fr": "S'il vous plaît"},
-    {"word": "Yes", "fr": "Oui"},
-    {"word": "No", "fr": "Non"},
-    {"word": "Sorry", "fr": "Désolé"},
-    {"word": "Name", "fr": "Nom"},
-  ],
-  "Espagnol": [
-    {"word": "Hola", "fr": "Bonjour"},
-    {"word": "Gato", "fr": "Chat"},
-    {"word": "Amigo", "fr": "Ami"},
-    {"word": "Feliz", "fr": "Heureux"},
-    {"word": "Agua", "fr": "Eau"},
-    {"word": "Hermoso", "fr": "Beau"},
-    {"word": "Casa", "fr": "Maison"},
-    {"word": "Perro", "fr": "Chien"},
-    {"word": "Sol", "fr": "Soleil"},
-    {"word": "Luna", "fr": "Lune"},
-    {"word": "Libro", "fr": "Livre"},
-    {"word": "Amor", "fr": "Amour"},
-    {"word": "Tiempo", "fr": "Temps"},
-    {"word": "Comida", "fr": "Nourriture"},
-    {"word": "Familia", "fr": "Famille"},
-    {"word": "Pan", "fr": "Pain"},
-    {"word": "Música", "fr": "Musique"},
-    {"word": "Árbol", "fr": "Arbre"},
-    {"word": "Mar", "fr": "Mer"},
-    {"word": "Cielo", "fr": "Ciel"},
-    {"word": "Pájaro", "fr": "Oiseau"},
-    {"word": "Flor", "fr": "Fleur"},
-    {"word": "Escuela", "fr": "École"},
-    {"word": "Trabajo", "fr": "Travail"},
-    {"word": "Noche", "fr": "Nuit"},
-    {"word": "Día", "fr": "Jour"},
-    {"word": "Bueno", "fr": "Bon"},
-    {"word": "Grande", "fr": "Grand"},
-    {"word": "Pequeño", "fr": "Petit"},
-    {"word": "Rápido", "fr": "Rapide"},
-    {"word": "Lento", "fr": "Lent"},
-    {"word": "Color", "fr": "Couleur"},
-    {"word": "Rojo", "fr": "Rouge"},
-    {"word": "Azul", "fr": "Bleu"},
-    {"word": "Verde", "fr": "Vert"},
-  ],
-  "Italien": [
-    {"word": "Ciao", "fr": "Bonjour"},
-    {"word": "Gatto", "fr": "Chat"},
-    {"word": "Amico", "fr": "Ami"},
-    {"word": "Felice", "fr": "Heureux"},
-    {"word": "Acqua", "fr": "Eau"},
-    {"word": "Bello", "fr": "Beau"},
-    {"word": "Casa", "fr": "Maison"},
-    {"word": "Cane", "fr": "Chien"},
-    {"word": "Sole", "fr": "Soleil"},
-    {"word": "Luna", "fr": "Lune"},
-    {"word": "Libro", "fr": "Livre"},
-    {"word": "Amore", "fr": "Amour"},
-    {"word": "Tempo", "fr": "Temps"},
-    {"word": "Cibo", "fr": "Nourriture"},
-    {"word": "Famiglia", "fr": "Famille"},
-    {"word": "Pane", "fr": "Pain"},
-    {"word": "Musica", "fr": "Musique"},
-    {"word": "Albero", "fr": "Arbre"},
-    {"word": "Mare", "fr": "Mer"},
-    {"word": "Cielo", "fr": "Ciel"},
-    {"word": "Uccello", "fr": "Oiseau"},
-    {"word": "Fiore", "fr": "Fleur"},
-    {"word": "Scuola", "fr": "École"},
-    {"word": "Lavoro", "fr": "Travail"},
-    {"word": "Notte", "fr": "Nuit"},
-    {"word": "Giorno", "fr": "Jour"},
-    {"word": "Buono", "fr": "Bon"},
-    {"word": "Grande", "fr": "Grand"},
-    {"word": "Piccolo", "fr": "Petit"},
-    {"word": "Veloce", "fr": "Rapide"},
-    {"word": "Lento", "fr": "Lent"},
-    {"word": "Colore", "fr": "Couleur"},
-    {"word": "Rosso", "fr": "Rouge"},
-    {"word": "Blu", "fr": "Bleu"},
-    {"word": "Verde", "fr": "Vert"},
-  ],
-  "Allemand": [
-    {"word": "Hallo", "fr": "Bonjour"},
-    {"word": "Katze", "fr": "Chat"},
-    {"word": "Freund", "fr": "Ami"},
-    {"word": "Glücklich", "fr": "Heureux"},
-    {"word": "Wasser", "fr": "Eau"},
-    {"word": "Schön", "fr": "Beau"},
-    {"word": "Haus", "fr": "Maison"},
-    {"word": "Hund", "fr": "Chien"},
-    {"word": "Sonne", "fr": "Soleil"},
-    {"word": "Mond", "fr": "Lune"},
-    {"word": "Buch", "fr": "Livre"},
-    {"word": "Liebe", "fr": "Amour"},
-    {"word": "Zeit", "fr": "Temps"},
-    {"word": "Essen", "fr": "Nourriture"},
-    {"word": "Familie", "fr": "Famille"},
-    {"word": "Brot", "fr": "Pain"},
-    {"word": "Musik", "fr": "Musique"},
-    {"word": "Baum", "fr": "Arbre"},
-    {"word": "Meer", "fr": "Mer"},
-    {"word": "Himmel", "fr": "Ciel"},
-    {"word": "Vogel", "fr": "Oiseau"},
-    {"word": "Blume", "fr": "Fleur"},
-    {"word": "Schule", "fr": "École"},
-    {"word": "Arbeit", "fr": "Travail"},
-    {"word": "Nacht", "fr": "Nuit"},
-    {"word": "Tag", "fr": "Jour"},
-    {"word": "Gut", "fr": "Bon"},
-    {"word": "Groß", "fr": "Grand"},
-    {"word": "Klein", "fr": "Petit"},
-    {"word": "Schnell", "fr": "Rapide"},
-    {"word": "Langsam", "fr": "Lent"},
-    {"word": "Farbe", "fr": "Couleur"},
-    {"word": "Rot", "fr": "Rouge"},
-    {"word": "Blau", "fr": "Bleu"},
-    {"word": "Grün", "fr": "Vert"},
-  ],
-  "Portugais": [
-    {"word": "Olá", "fr": "Bonjour"},
-    {"word": "Gato", "fr": "Chat"},
-    {"word": "Amigo", "fr": "Ami"},
-    {"word": "Feliz", "fr": "Heureux"},
-    {"word": "Água", "fr": "Eau"},
-    {"word": "Bonito", "fr": "Beau"},
-    {"word": "Casa", "fr": "Maison"},
-    {"word": "Cachorro", "fr": "Chien"},
-    {"word": "Sol", "fr": "Soleil"},
-    {"word": "Lua", "fr": "Lune"},
-    {"word": "Livro", "fr": "Livre"},
-    {"word": "Amor", "fr": "Amour"},
-    {"word": "Tempo", "fr": "Temps"},
-    {"word": "Comida", "fr": "Nourriture"},
-    {"word": "Família", "fr": "Famille"},
-    {"word": "Pão", "fr": "Pain"},
-    {"word": "Música", "fr": "Musique"},
-    {"word": "Árvore", "fr": "Arbre"},
-    {"word": "Mar", "fr": "Mer"},
-    {"word": "Céu", "fr": "Ciel"},
-    {"word": "Pássaro", "fr": "Oiseau"},
-    {"word": "Flor", "fr": "Fleur"},
-    {"word": "Escola", "fr": "École"},
-    {"word": "Trabalho", "fr": "Travail"},
-    {"word": "Noite", "fr": "Nuit"},
-    {"word": "Dia", "fr": "Jour"},
-    {"word": "Bom", "fr": "Bon"},
-    {"word": "Grande", "fr": "Grand"},
-    {"word": "Pequeno", "fr": "Petit"},
-    {"word": "Rápido", "fr": "Rapide"},
-    {"word": "Lento", "fr": "Lent"},
-    {"word": "Cor", "fr": "Couleur"},
-    {"word": "Vermelho", "fr": "Rouge"},
-    {"word": "Azul", "fr": "Bleu"},
-    {"word": "Verde", "fr": "Vert"},
-  ],
-  "Arabe": [
-    {"word": "مرحبا", "fr": "Bonjour"},
-    {"word": "قطة", "fr": "Chat"},
-    {"word": "صديق", "fr": "Ami"},
-    {"word": "سعيد", "fr": "Heureux"},
-    {"word": "ماء", "fr": "Eau"},
-    {"word": "جميل", "fr": "Beau"},
-    {"word": "بيت", "fr": "Maison"},
-    {"word": "كلب", "fr": "Chien"},
-    {"word": "شمس", "fr": "Soleil"},
-    {"word": "قمر", "fr": "Lune"},
-    {"word": "كتاب", "fr": "Livre"},
-    {"word": "حب", "fr": "Amour"},
-    {"word": "وقت", "fr": "Temps"},
-    {"word": "طعام", "fr": "Nourriture"},
-    {"word": "عائلة", "fr": "Famille"},
-    {"word": "خبز", "fr": "Pain"},
-    {"word": "موسيقى", "fr": "Musique"},
-    {"word": "شجرة", "fr": "Arbre"},
-    {"word": "بحر", "fr": "Mer"},
-    {"word": "سماء", "fr": "Ciel"},
-    {"word": "طائر", "fr": "Oiseau"},
-    {"word": "زهرة", "fr": "Fleur"},
-    {"word": "مدرسة", "fr": "École"},
-    {"word": "عمل", "fr": "Travail"},
-    {"word": "ليل", "fr": "Nuit"},
-    {"word": "يوم", "fr": "Jour"},
-  ],
-  "Japonais": [
-    {"word": "こんにちは", "fr": "Bonjour"},
-    {"word": "猫", "fr": "Chat"},
-    {"word": "友達", "fr": "Ami"},
-    {"word": "幸せ", "fr": "Heureux"},
-    {"word": "水", "fr": "Eau"},
-    {"word": "綺麗", "fr": "Beau"},
-    {"word": "家", "fr": "Maison"},
-    {"word": "犬", "fr": "Chien"},
-    {"word": "太陽", "fr": "Soleil"},
-    {"word": "月", "fr": "Lune"},
-    {"word": "本", "fr": "Livre"},
-    {"word": "愛", "fr": "Amour"},
-    {"word": "時間", "fr": "Temps"},
-    {"word": "食べ物", "fr": "Nourriture"},
-    {"word": "家族", "fr": "Famille"},
-    {"word": "パン", "fr": "Pain"},
-    {"word": "音楽", "fr": "Musique"},
-    {"word": "木", "fr": "Arbre"},
-    {"word": "海", "fr": "Mer"},
-    {"word": "空", "fr": "Ciel"},
-    {"word": "鳥", "fr": "Oiseau"},
-    {"word": "花", "fr": "Fleur"},
-    {"word": "学校", "fr": "École"},
-    {"word": "仕事", "fr": "Travail"},
-    {"word": "夜", "fr": "Nuit"},
-  ],
-  "Chinois": [
-    {"word": "你好", "fr": "Bonjour"},
-    {"word": "猫", "fr": "Chat"},
-    {"word": "朋友", "fr": "Ami"},
-    {"word": "开心", "fr": "Heureux"},
-    {"word": "水", "fr": "Eau"},
-    {"word": "漂亮", "fr": "Beau"},
-    {"word": "家", "fr": "Maison"},
-    {"word": "狗", "fr": "Chien"},
-    {"word": "太阳", "fr": "Soleil"},
-    {"word": "月亮", "fr": "Lune"},
-    {"word": "书", "fr": "Livre"},
-    {"word": "爱", "fr": "Amour"},
-    {"word": "时间", "fr": "Temps"},
-    {"word": "食物", "fr": "Nourriture"},
-    {"word": "家庭", "fr": "Famille"},
-    {"word": "面包", "fr": "Pain"},
-    {"word": "音乐", "fr": "Musique"},
-    {"word": "树", "fr": "Arbre"},
-    {"word": "海", "fr": "Mer"},
-    {"word": "天空", "fr": "Ciel"},
-    {"word": "鸟", "fr": "Oiseau"},
-    {"word": "花", "fr": "Fleur"},
-    {"word": "学校", "fr": "École"},
-    {"word": "工作", "fr": "Travail"},
-    {"word": "夜晚", "fr": "Nuit"},
-  ],
+  "Anglais": _englishWords,
+  "Français": _deriveFrench(_englishWords),
 };
 
 final Map<String, List<Map<String, String>>> phraseBank = {
-  "Anglais": [
-    {"word": "How are you?", "fr": "Comment vas-tu ?"},
-    {"word": "What is your name?", "fr": "Comment tu t'appelles ?"},
-    {"word": "Nice to meet you", "fr": "Enchanté"},
-    {"word": "I don't understand", "fr": "Je ne comprends pas"},
-    {"word": "Can you help me?", "fr": "Peux-tu m'aider ?"},
-    {"word": "Where is the bathroom?", "fr": "Où sont les toilettes ?"},
-    {"word": "How much is it?", "fr": "Combien ça coûte ?"},
-    {"word": "I would like...", "fr": "Je voudrais..."},
-    {"word": "See you later", "fr": "À plus tard"},
-    {"word": "Have a good day", "fr": "Bonne journée"},
-    {"word": "What time is it?", "fr": "Quelle heure est-il ?"},
-    {"word": "I am hungry", "fr": "J'ai faim"},
-    {"word": "I am thirsty", "fr": "J'ai soif"},
-    {"word": "I am tired", "fr": "Je suis fatigué"},
-    {"word": "Where are you from?", "fr": "D'où viens-tu ?"},
-    {"word": "I speak a little", "fr": "Je parle un peu"},
-    {"word": "Can you repeat?", "fr": "Peux-tu répéter ?"},
-    {"word": "Slower please", "fr": "Plus lentement s'il te plaît"},
-    {"word": "It's delicious", "fr": "C'est délicieux"},
-    {"word": "Congratulations", "fr": "Félicitations"},
-  ],
-  "Espagnol": [
-    {"word": "¿Cómo estás?", "fr": "Comment vas-tu ?"},
-    {"word": "¿Cómo te llamas?", "fr": "Comment tu t'appelles ?"},
-    {"word": "Mucho gusto", "fr": "Enchanté"},
-    {"word": "No entiendo", "fr": "Je ne comprends pas"},
-    {"word": "¿Puedes ayudarme?", "fr": "Peux-tu m'aider ?"},
-    {"word": "¿Dónde está el baño?", "fr": "Où sont les toilettes ?"},
-    {"word": "¿Cuánto cuesta?", "fr": "Combien ça coûte ?"},
-    {"word": "Quisiera...", "fr": "Je voudrais..."},
-    {"word": "Hasta luego", "fr": "À plus tard"},
-    {"word": "Que tengas un buen día", "fr": "Bonne journée"},
-    {"word": "¿Qué hora es?", "fr": "Quelle heure est-il ?"},
-    {"word": "Tengo hambre", "fr": "J'ai faim"},
-    {"word": "Tengo sed", "fr": "J'ai soif"},
-    {"word": "Estoy cansado", "fr": "Je suis fatigué"},
-    {"word": "¿De dónde eres?", "fr": "D'où viens-tu ?"},
-    {"word": "Hablo un poco", "fr": "Je parle un peu"},
-    {"word": "¿Puedes repetir?", "fr": "Peux-tu répéter ?"},
-    {"word": "Más despacio por favor", "fr": "Plus lentement s'il te plaît"},
-    {"word": "Está delicioso", "fr": "C'est délicieux"},
-    {"word": "Felicidades", "fr": "Félicitations"},
-  ],
-  "Italien": [
-    {"word": "Come stai?", "fr": "Comment vas-tu ?"},
-    {"word": "Come ti chiami?", "fr": "Comment tu t'appelles ?"},
-    {"word": "Piacere di conoscerti", "fr": "Enchanté"},
-    {"word": "Non capisco", "fr": "Je ne comprends pas"},
-    {"word": "Puoi aiutarmi?", "fr": "Peux-tu m'aider ?"},
-    {"word": "Dov'è il bagno?", "fr": "Où sont les toilettes ?"},
-    {"word": "Quanto costa?", "fr": "Combien ça coûte ?"},
-    {"word": "Vorrei...", "fr": "Je voudrais..."},
-    {"word": "A dopo", "fr": "À plus tard"},
-    {"word": "Buona giornata", "fr": "Bonne journée"},
-    {"word": "Che ore sono?", "fr": "Quelle heure est-il ?"},
-    {"word": "Ho fame", "fr": "J'ai faim"},
-    {"word": "Ho sete", "fr": "J'ai soif"},
-    {"word": "Sono stanco", "fr": "Je suis fatigué"},
-    {"word": "Di dove sei?", "fr": "D'où viens-tu ?"},
-    {"word": "Parlo un po'", "fr": "Je parle un peu"},
-    {"word": "Puoi ripetere?", "fr": "Peux-tu répéter ?"},
-    {"word": "Più lentamente per favore", "fr": "Plus lentement s'il te plaît"},
-    {"word": "È delizioso", "fr": "C'est délicieux"},
-    {"word": "Congratulazioni", "fr": "Félicitations"},
-  ],
-  "Allemand": [
-    {"word": "Wie geht es dir?", "fr": "Comment vas-tu ?"},
-    {"word": "Wie heißt du?", "fr": "Comment tu t'appelles ?"},
-    {"word": "Freut mich", "fr": "Enchanté"},
-    {"word": "Ich verstehe nicht", "fr": "Je ne comprends pas"},
-    {"word": "Kannst du mir helfen?", "fr": "Peux-tu m'aider ?"},
-    {"word": "Wo ist die Toilette?", "fr": "Où sont les toilettes ?"},
-    {"word": "Wie viel kostet das?", "fr": "Combien ça coûte ?"},
-    {"word": "Ich hätte gern...", "fr": "Je voudrais..."},
-    {"word": "Bis später", "fr": "À plus tard"},
-    {"word": "Schönen Tag noch", "fr": "Bonne journée"},
-    {"word": "Wie spät ist es?", "fr": "Quelle heure est-il ?"},
-    {"word": "Ich habe Hunger", "fr": "J'ai faim"},
-    {"word": "Ich habe Durst", "fr": "J'ai soif"},
-    {"word": "Ich bin müde", "fr": "Je suis fatigué"},
-    {"word": "Woher kommst du?", "fr": "D'où viens-tu ?"},
-    {"word": "Ich spreche ein bisschen", "fr": "Je parle un peu"},
-    {"word": "Kannst du das wiederholen?", "fr": "Peux-tu répéter ?"},
-    {"word": "Langsamer bitte", "fr": "Plus lentement s'il te plaît"},
-    {"word": "Das ist lecker", "fr": "C'est délicieux"},
-    {"word": "Herzlichen Glückwunsch", "fr": "Félicitations"},
-  ],
-  "Portugais": [
-    {"word": "Como você está?", "fr": "Comment vas-tu ?"},
-    {"word": "Qual é o seu nome?", "fr": "Comment tu t'appelles ?"},
-    {"word": "Prazer em conhecê-lo", "fr": "Enchanté"},
-    {"word": "Não entendo", "fr": "Je ne comprends pas"},
-    {"word": "Você pode me ajudar?", "fr": "Peux-tu m'aider ?"},
-    {"word": "Onde fica o banheiro?", "fr": "Où sont les toilettes ?"},
-    {"word": "Quanto custa?", "fr": "Combien ça coûte ?"},
-    {"word": "Eu gostaria de...", "fr": "Je voudrais..."},
-    {"word": "Até mais tarde", "fr": "À plus tard"},
-    {"word": "Tenha um bom dia", "fr": "Bonne journée"},
-    {"word": "Que horas são?", "fr": "Quelle heure est-il ?"},
-    {"word": "Estou com fome", "fr": "J'ai faim"},
-    {"word": "Estou com sede", "fr": "J'ai soif"},
-    {"word": "Estou cansado", "fr": "Je suis fatigué"},
-    {"word": "De onde você é?", "fr": "D'où viens-tu ?"},
-    {"word": "Eu falo um pouco", "fr": "Je parle un peu"},
-    {"word": "Pode repetir?", "fr": "Peux-tu répéter ?"},
-    {"word": "Mais devagar por favor", "fr": "Plus lentement s'il te plaît"},
-    {"word": "Está delicioso", "fr": "C'est délicieux"},
-    {"word": "Parabéns", "fr": "Félicitations"},
-  ],
-  "Arabe": [
-    {"word": "كيف حالك؟", "fr": "Comment vas-tu ?"},
-    {"word": "ما اسمك؟", "fr": "Comment tu t'appelles ?"},
-    {"word": "تشرفنا", "fr": "Enchanté"},
-    {"word": "لا أفهم", "fr": "Je ne comprends pas"},
-    {"word": "هل يمكنك مساعدتي؟", "fr": "Peux-tu m'aider ?"},
-    {"word": "أين الحمام؟", "fr": "Où sont les toilettes ?"},
-    {"word": "كم الثمن؟", "fr": "Combien ça coûte ?"},
-    {"word": "أريد...", "fr": "Je voudrais..."},
-    {"word": "إلى اللقاء", "fr": "À plus tard"},
-    {"word": "يوم سعيد", "fr": "Bonne journée"},
-    {"word": "كم الساعة؟", "fr": "Quelle heure est-il ?"},
-    {"word": "أنا جائع", "fr": "J'ai faim"},
-    {"word": "أنا عطشان", "fr": "J'ai soif"},
-    {"word": "أنا متعب", "fr": "Je suis fatigué"},
-    {"word": "من أين أنت؟", "fr": "D'où viens-tu ?"},
-    {"word": "أتكلم قليلا", "fr": "Je parle un peu"},
-    {"word": "هل يمكنك التكرار؟", "fr": "Peux-tu répéter ?"},
-    {"word": "ببطء من فضلك", "fr": "Plus lentement s'il te plaît"},
-    {"word": "شكرا جزيلا", "fr": "Merci beaucoup"},
-    {"word": "مبروك", "fr": "Félicitations"},
-  ],
-  "Japonais": [
-    {"word": "元気ですか", "fr": "Comment vas-tu ?"},
-    {"word": "お名前は何ですか", "fr": "Comment tu t'appelles ?"},
-    {"word": "はじめまして", "fr": "Enchanté"},
-    {"word": "わかりません", "fr": "Je ne comprends pas"},
-    {"word": "手伝ってくれますか", "fr": "Peux-tu m'aider ?"},
-    {"word": "トイレはどこですか", "fr": "Où sont les toilettes ?"},
-    {"word": "いくらですか", "fr": "Combien ça coûte ?"},
-    {"word": "お願いします", "fr": "Je voudrais / S'il vous plaît"},
-    {"word": "また後で", "fr": "À plus tard"},
-    {"word": "良い一日を", "fr": "Bonne journée"},
-    {"word": "何時ですか", "fr": "Quelle heure est-il ?"},
-    {"word": "お腹が空きました", "fr": "J'ai faim"},
-    {"word": "喉が渇きました", "fr": "J'ai soif"},
-    {"word": "疲れました", "fr": "Je suis fatigué"},
-    {"word": "出身はどこですか", "fr": "D'où viens-tu ?"},
-    {"word": "少し話せます", "fr": "Je parle un peu"},
-    {"word": "もう一度言ってください", "fr": "Peux-tu répéter ?"},
-    {"word": "ゆっくり話してください", "fr": "Plus lentement s'il te plaît"},
-    {"word": "おいしいです", "fr": "C'est délicieux"},
-    {"word": "おめでとう", "fr": "Félicitations"},
-  ],
-  "Chinois": [
-    {"word": "你好吗", "fr": "Comment vas-tu ?"},
-    {"word": "你叫什么名字", "fr": "Comment tu t'appelles ?"},
-    {"word": "很高兴认识你", "fr": "Enchanté"},
-    {"word": "我不明白", "fr": "Je ne comprends pas"},
-    {"word": "你能帮我吗", "fr": "Peux-tu m'aider ?"},
-    {"word": "洗手间在哪里", "fr": "Où sont les toilettes ?"},
-    {"word": "多少钱", "fr": "Combien ça coûte ?"},
-    {"word": "我想要...", "fr": "Je voudrais..."},
-    {"word": "回头见", "fr": "À plus tard"},
-    {"word": "祝你今天愉快", "fr": "Bonne journée"},
-    {"word": "现在几点", "fr": "Quelle heure est-il ?"},
-    {"word": "我饿了", "fr": "J'ai faim"},
-    {"word": "我渴了", "fr": "J'ai soif"},
-    {"word": "我累了", "fr": "Je suis fatigué"},
-    {"word": "你是哪里人", "fr": "D'où viens-tu ?"},
-    {"word": "我会说一点", "fr": "Je parle un peu"},
-    {"word": "你能再说一遍吗", "fr": "Peux-tu répéter ?"},
-    {"word": "请说慢一点", "fr": "Plus lentement s'il te plaît"},
-    {"word": "很好吃", "fr": "C'est délicieux"},
-    {"word": "恭喜", "fr": "Félicitations"},
-  ],
+  "Anglais": _englishPhrases,
+  "Français": _deriveFrench(_englishPhrases),
+};
+
+final Map<String, List<Map<String, String>>> numberBank = {
+  "Anglais": _englishNumbers,
+  "Français": _deriveFrench(_englishNumbers),
+};
+
+final Map<String, List<Map<String, String>>> verbBank = {
+  "Anglais": _englishVerbs,
+  "Français": _deriveFrench(_englishVerbs),
 };
 
 class CatSprite extends StatefulWidget {
@@ -823,12 +484,14 @@ class WalkingCat extends StatefulWidget {
   final double startY;
   final String language;
   final String bankType;
+  final bool facingRight;
   const WalkingCat({
     super.key,
     required this.startX,
     required this.startY,
     required this.language,
     required this.bankType,
+    this.facingRight = true,
   });
 
   @override
@@ -840,18 +503,61 @@ class _WalkingCatState extends State<WalkingCat> {
   late double _y;
   double _dragStartX = 0;
   double _dragStartY = 0;
-  bool _facingRight = true;
+  late bool _facingRight;
   final FlutterTts _catTts = FlutterTts();
   Map<String, String>? _bubbleWord;
   double _growth = 1.0;
   static const double _maxGrowth = 2.5;
   static const double _growthStep = 0.12;
 
+  Map<String, List<Map<String, String>>> get _bank {
+    switch (widget.bankType) {
+      case "expressions":
+        return phraseBank;
+      case "chiffres":
+        return numberBank;
+      case "verbes":
+        return verbBank;
+      case "mots":
+      default:
+        return wordBank;
+    }
+  }
+
+  Color get _patchColor {
+    switch (widget.bankType) {
+      case "expressions":
+        return const Color(0xFFFFC107);
+      case "chiffres":
+        return const Color(0xFFE53935);
+      case "verbes":
+        return const Color(0xFF1E88E5);
+      case "mots":
+      default:
+        return const Color(0xFF1A1A1A);
+    }
+  }
+
+  String get _label {
+    switch (widget.bankType) {
+      case "expressions":
+        return "Expressions";
+      case "chiffres":
+        return "Chiffres";
+      case "verbes":
+        return "Verbes";
+      case "mots":
+      default:
+        return "Mots";
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _x = widget.startX;
     _y = widget.startY;
+    _facingRight = widget.facingRight;
   }
 
   @override
@@ -861,8 +567,7 @@ class _WalkingCatState extends State<WalkingCat> {
   }
 
   void _onTap() async {
-    final bank = widget.bankType == "expressions" ? phraseBank : wordBank;
-    final words = bank[widget.language] ?? bank["Anglais"]!;
+    final words = _bank[widget.language] ?? _bank["Anglais"]!;
     final chosen = words[_rng.nextInt(words.length)];
     setState(() {
       _bubbleWord = chosen;
@@ -948,9 +653,7 @@ class _WalkingCatState extends State<WalkingCat> {
               child: Transform.scale(
                 scale: _growth,
                 child: CatSprite(
-                  patchColor: widget.bankType == "expressions"
-                      ? const Color(0xFFFFC107)
-                      : const Color(0xFF1A1A1A),
+                  patchColor: _patchColor,
                 ),
               ),
             ),
@@ -963,7 +666,7 @@ class _WalkingCatState extends State<WalkingCat> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  widget.bankType == "expressions" ? "Expressions" : "Mots",
+                  _label,
                   style: const TextStyle(fontSize: 10, color: Colors.black54),
                 ),
               ),
@@ -986,15 +689,31 @@ class WalkingCatsBackground extends StatelessWidget {
       children: [
         WalkingCat(
           startX: size.width * 0.25,
-          startY: size.height * 0.6,
+          startY: size.height * 0.55,
           language: language,
           bankType: "mots",
+          facingRight: true,
         ),
         WalkingCat(
           startX: size.width * 0.65,
-          startY: size.height * 0.6,
+          startY: size.height * 0.55,
           language: language,
           bankType: "expressions",
+          facingRight: false,
+        ),
+        WalkingCat(
+          startX: size.width * 0.25,
+          startY: size.height * 0.75,
+          language: language,
+          bankType: "chiffres",
+          facingRight: true,
+        ),
+        WalkingCat(
+          startX: size.width * 0.65,
+          startY: size.height * 0.75,
+          language: language,
+          bankType: "verbes",
+          facingRight: false,
         ),
       ],
     );
@@ -1019,13 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<String> _languages = [
     "Anglais",
-    "Espagnol",
-    "Italien",
-    "Allemand",
-    "Portugais",
-    "Arabe",
-    "Japonais",
-    "Chinois",
+    "Français",
   ];
   String _selectedLanguage = "Anglais";
   Character _selectedCharacter = characters[0];
@@ -1164,6 +877,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('App Langues Vocale'),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4.0),
