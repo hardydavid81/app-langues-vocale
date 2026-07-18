@@ -25,39 +25,58 @@ class Character {
   final String emoji;
   final String personality;
   final String ttsLocale;
-  const Character(this.name, this.emoji, this.personality, this.ttsLocale);
+  final double pitch;
+  final double rate;
+  const Character(
+    this.name,
+    this.emoji,
+    this.personality,
+    this.ttsLocale, {
+    this.pitch = 1.0,
+    this.rate = 0.5,
+  });
 }
 
 const List<Character> characters = [
   Character(
-    "Pierre",
+    "Pierre Croissant",
     "🇫🇷",
-    "Tu es Pierre, un Parisien blasé et un peu snob. Tu soupires souvent, tu trouves tout 'pas terrible', et tu glisses des mots français par-ci par-là même en parlant la langue cible.",
+    "Tu es Pierre Croissant, un Français qui apprend la langue cible avec un accent français très prononcé. Tu soupires souvent, tu glisses des mots français par-ci par-là même en parlant la langue cible.",
     "fr-FR",
+    pitch: 1.15,
+    rate: 0.45,
   ),
   Character(
-    "Kevin",
+    "Tex Baguette",
     "🤠",
-    "Tu es Kevin, un cowboy texan hyper enthousiaste. Tu dis 'yeehaw', tu compares tout à des chevaux ou du barbecue, et tu es exagérément amical.",
+    "Tu es Tex Baguette, un cowboy texan hyper enthousiaste qui apprend la langue cible avec un accent américain très prononcé. Tu dis 'yeehaw', tu compares tout à des chevaux ou du barbecue.",
     "en-US",
+    pitch: 1.4,
+    rate: 0.6,
   ),
   Character(
-    "Giovanni",
+    "Marco Mozzarella",
     "🇮🇹",
-    "Tu es Giovanni, un Italien passionné et dramatique. Tu parles avec de grands gestes (decris-les entre parentheses), tu t'exclames souvent 'Mamma mia!', et tu adores la nourriture.",
+    "Tu es Marco Mozzarella, un Italien passionné et dramatique qui apprend la langue cible avec un accent italien très prononcé. Tu t'exclames souvent 'Mamma mia!', et tu adores la nourriture.",
     "it-IT",
+    pitch: 1.45,
+    rate: 0.55,
   ),
   Character(
-    "Yuki",
+    "Kenji Konbanjour",
     "🇯🇵",
-    "Tu es Yuki, energique et suraigüe, style personnage d'anime. Tu es toujours super enthousiaste, tu utilises plein de kawaii et de superlatifs.",
+    "Tu es Kenji Konbanjour, energique et suraigu, style personnage d'anime, qui apprend la langue cible avec un accent japonais très prononcé. Tu es toujours super enthousiaste, tu utilises plein de kawaii et de superlatifs.",
     "ja-JP",
+    pitch: 1.7,
+    rate: 0.6,
   ),
   Character(
-    "Angus",
+    "Hamish Ochaye",
     "🏴",
-    "Tu es Angus, un Ecossais bourru des Highlands. Tu es direct, un peu grognon mais chaleureux au fond, et tu mentionnes souvent le mauvais temps ou le whisky.",
+    "Tu es Hamish Ochaye, un Ecossais bourru des Highlands qui apprend la langue cible avec un accent écossais très prononcé. Tu es direct, un peu grognon mais chaleureux au fond, et tu mentionnes souvent le mauvais temps ou le whisky.",
     "en-GB",
+    pitch: 1.1,
+    rate: 0.48,
   ),
 ];
 
@@ -752,59 +771,78 @@ class _WalkingCatState extends State<WalkingCat> {
             top: widget.catSize.height * 0.38,
             left: widget.facingRight ? -(widget.catSize.width * 0.62) : null,
             right: widget.facingRight ? null : -(widget.catSize.width * 0.62),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black87, width: 1),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_historyIndex > 0)
-                    GestureDetector(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black87, width: 1),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.reversedMode && !_revealed) ...[
+                        Text(
+                          _bubbleWord!["fr"]!,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        GestureDetector(
+                          onTap: _onReveal,
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.indigo,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              "Deviner ?",
+                              style: TextStyle(fontSize: 11, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Text(
+                          _bubbleWord!["word"]!,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        Text(
+                          _bubbleWord!["fr"]!,
+                          style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (_historyIndex > 0)
+                  Positioned(
+                    top: -12,
+                    left: -12,
+                    child: GestureDetector(
                       onTap: _onBack,
-                      child: const Padding(
-                        padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(Icons.undo, size: 16, color: Colors.black45),
-                      ),
-                    ),
-                  if (widget.reversedMode && !_revealed) ...[
-                    Text(
-                      _bubbleWord!["fr"]!,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    GestureDetector(
-                      onTap: _onReveal,
+                      behavior: HitTestBehavior.opaque,
                       child: Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
                           color: Colors.indigo,
-                          borderRadius: BorderRadius.circular(8),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                          ],
                         ),
-                        child: const Text(
-                          "Deviner ?",
-                          style: TextStyle(fontSize: 11, color: Colors.white),
-                        ),
+                        child: const Icon(Icons.undo, size: 18, color: Colors.white),
                       ),
                     ),
-                  ] else ...[
-                    Text(
-                      _bubbleWord!["word"]!,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    Text(
-                      _bubbleWord!["fr"]!,
-                      style: const TextStyle(fontSize: 11, color: Colors.black54),
-                    ),
-                  ],
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
       ],
@@ -952,6 +990,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _isTranslating = false;
         });
         await _tts.setLanguage(_selectedCharacter.ttsLocale);
+        await _tts.setPitch(_selectedCharacter.pitch);
+        await _tts.setSpeechRate(_selectedCharacter.rate);
         await _tts.speak(translated);
       } else {
         setState(() {
@@ -1157,6 +1197,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             icon: const Icon(Icons.volume_up, color: Colors.indigo),
                             onPressed: () async {
                               await _tts.setLanguage(_selectedCharacter.ttsLocale);
+                              await _tts.setPitch(_selectedCharacter.pitch);
+                              await _tts.setSpeechRate(_selectedCharacter.rate);
                               await _tts.speak(_translation!);
                             },
                           ),
