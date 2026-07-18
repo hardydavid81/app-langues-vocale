@@ -117,6 +117,40 @@ final Map<String, List<Map<String, String>>> wordBank = {
     {"word": "Red", "fr": "Rouge"},
     {"word": "Blue", "fr": "Bleu"},
     {"word": "Green", "fr": "Vert"},
+    {"word": "One", "fr": "Un"},
+    {"word": "Two", "fr": "Deux"},
+    {"word": "Three", "fr": "Trois"},
+    {"word": "Four", "fr": "Quatre"},
+    {"word": "Five", "fr": "Cinq"},
+    {"word": "Mother", "fr": "Mère"},
+    {"word": "Father", "fr": "Père"},
+    {"word": "Brother", "fr": "Frère"},
+    {"word": "Sister", "fr": "Sœur"},
+    {"word": "Child", "fr": "Enfant"},
+    {"word": "Eat", "fr": "Manger"},
+    {"word": "Drink", "fr": "Boire"},
+    {"word": "Sleep", "fr": "Dormir"},
+    {"word": "Walk", "fr": "Marcher"},
+    {"word": "Speak", "fr": "Parler"},
+    {"word": "See", "fr": "Voir"},
+    {"word": "Come", "fr": "Venir"},
+    {"word": "Go", "fr": "Aller"},
+    {"word": "Head", "fr": "Tête"},
+    {"word": "Hand", "fr": "Main"},
+    {"word": "Eye", "fr": "Œil"},
+    {"word": "Mouth", "fr": "Bouche"},
+    {"word": "Rain", "fr": "Pluie"},
+    {"word": "Wind", "fr": "Vent"},
+    {"word": "Snow", "fr": "Neige"},
+    {"word": "Today", "fr": "Aujourd'hui"},
+    {"word": "Tomorrow", "fr": "Demain"},
+    {"word": "Yesterday", "fr": "Hier"},
+    {"word": "Thanks", "fr": "Merci"},
+    {"word": "Please", "fr": "S'il vous plaît"},
+    {"word": "Yes", "fr": "Oui"},
+    {"word": "No", "fr": "Non"},
+    {"word": "Sorry", "fr": "Désolé"},
+    {"word": "Name", "fr": "Nom"},
   ],
   "Espagnol": [
     {"word": "Hola", "fr": "Bonjour"},
@@ -350,8 +384,188 @@ final Map<String, List<Map<String, String>>> wordBank = {
   ],
 };
 
+final Map<String, List<Map<String, String>>> phraseBank = {
+  "Anglais": [
+    {"word": "How are you?", "fr": "Comment vas-tu ?"},
+    {"word": "What is your name?", "fr": "Comment tu t'appelles ?"},
+    {"word": "Nice to meet you", "fr": "Enchanté"},
+    {"word": "I don't understand", "fr": "Je ne comprends pas"},
+    {"word": "Can you help me?", "fr": "Peux-tu m'aider ?"},
+    {"word": "Where is the bathroom?", "fr": "Où sont les toilettes ?"},
+    {"word": "How much is it?", "fr": "Combien ça coûte ?"},
+    {"word": "I would like...", "fr": "Je voudrais..."},
+    {"word": "See you later", "fr": "À plus tard"},
+    {"word": "Have a good day", "fr": "Bonne journée"},
+    {"word": "What time is it?", "fr": "Quelle heure est-il ?"},
+    {"word": "I am hungry", "fr": "J'ai faim"},
+    {"word": "I am thirsty", "fr": "J'ai soif"},
+    {"word": "I am tired", "fr": "Je suis fatigué"},
+    {"word": "Where are you from?", "fr": "D'où viens-tu ?"},
+    {"word": "I speak a little", "fr": "Je parle un peu"},
+    {"word": "Can you repeat?", "fr": "Peux-tu répéter ?"},
+    {"word": "Slower please", "fr": "Plus lentement s'il te plaît"},
+    {"word": "It's delicious", "fr": "C'est délicieux"},
+    {"word": "Congratulations", "fr": "Félicitations"},
+  ],
+  "Espagnol": [
+    {"word": "¿Cómo estás?", "fr": "Comment vas-tu ?"},
+    {"word": "¿Cómo te llamas?", "fr": "Comment tu t'appelles ?"},
+    {"word": "Mucho gusto", "fr": "Enchanté"},
+    {"word": "No entiendo", "fr": "Je ne comprends pas"},
+    {"word": "¿Puedes ayudarme?", "fr": "Peux-tu m'aider ?"},
+    {"word": "¿Dónde está el baño?", "fr": "Où sont les toilettes ?"},
+    {"word": "¿Cuánto cuesta?", "fr": "Combien ça coûte ?"},
+    {"word": "Quisiera...", "fr": "Je voudrais..."},
+    {"word": "Hasta luego", "fr": "À plus tard"},
+    {"word": "Que tengas un buen día", "fr": "Bonne journée"},
+    {"word": "¿Qué hora es?", "fr": "Quelle heure est-il ?"},
+    {"word": "Tengo hambre", "fr": "J'ai faim"},
+    {"word": "Tengo sed", "fr": "J'ai soif"},
+    {"word": "Estoy cansado", "fr": "Je suis fatigué"},
+    {"word": "¿De dónde eres?", "fr": "D'où viens-tu ?"},
+    {"word": "Hablo un poco", "fr": "Je parle un peu"},
+    {"word": "¿Puedes repetir?", "fr": "Peux-tu répéter ?"},
+    {"word": "Más despacio por favor", "fr": "Plus lentement s'il te plaît"},
+    {"word": "Está delicioso", "fr": "C'est délicieux"},
+    {"word": "Felicidades", "fr": "Félicitations"},
+  ],
+  "Italien": [
+    {"word": "Come stai?", "fr": "Comment vas-tu ?"},
+    {"word": "Come ti chiami?", "fr": "Comment tu t'appelles ?"},
+    {"word": "Piacere di conoscerti", "fr": "Enchanté"},
+    {"word": "Non capisco", "fr": "Je ne comprends pas"},
+    {"word": "Puoi aiutarmi?", "fr": "Peux-tu m'aider ?"},
+    {"word": "Dov'è il bagno?", "fr": "Où sont les toilettes ?"},
+    {"word": "Quanto costa?", "fr": "Combien ça coûte ?"},
+    {"word": "Vorrei...", "fr": "Je voudrais..."},
+    {"word": "A dopo", "fr": "À plus tard"},
+    {"word": "Buona giornata", "fr": "Bonne journée"},
+    {"word": "Che ore sono?", "fr": "Quelle heure est-il ?"},
+    {"word": "Ho fame", "fr": "J'ai faim"},
+    {"word": "Ho sete", "fr": "J'ai soif"},
+    {"word": "Sono stanco", "fr": "Je suis fatigué"},
+    {"word": "Di dove sei?", "fr": "D'où viens-tu ?"},
+    {"word": "Parlo un po'", "fr": "Je parle un peu"},
+    {"word": "Puoi ripetere?", "fr": "Peux-tu répéter ?"},
+    {"word": "Più lentamente per favore", "fr": "Plus lentement s'il te plaît"},
+    {"word": "È delizioso", "fr": "C'est délicieux"},
+    {"word": "Congratulazioni", "fr": "Félicitations"},
+  ],
+  "Allemand": [
+    {"word": "Wie geht es dir?", "fr": "Comment vas-tu ?"},
+    {"word": "Wie heißt du?", "fr": "Comment tu t'appelles ?"},
+    {"word": "Freut mich", "fr": "Enchanté"},
+    {"word": "Ich verstehe nicht", "fr": "Je ne comprends pas"},
+    {"word": "Kannst du mir helfen?", "fr": "Peux-tu m'aider ?"},
+    {"word": "Wo ist die Toilette?", "fr": "Où sont les toilettes ?"},
+    {"word": "Wie viel kostet das?", "fr": "Combien ça coûte ?"},
+    {"word": "Ich hätte gern...", "fr": "Je voudrais..."},
+    {"word": "Bis später", "fr": "À plus tard"},
+    {"word": "Schönen Tag noch", "fr": "Bonne journée"},
+    {"word": "Wie spät ist es?", "fr": "Quelle heure est-il ?"},
+    {"word": "Ich habe Hunger", "fr": "J'ai faim"},
+    {"word": "Ich habe Durst", "fr": "J'ai soif"},
+    {"word": "Ich bin müde", "fr": "Je suis fatigué"},
+    {"word": "Woher kommst du?", "fr": "D'où viens-tu ?"},
+    {"word": "Ich spreche ein bisschen", "fr": "Je parle un peu"},
+    {"word": "Kannst du das wiederholen?", "fr": "Peux-tu répéter ?"},
+    {"word": "Langsamer bitte", "fr": "Plus lentement s'il te plaît"},
+    {"word": "Das ist lecker", "fr": "C'est délicieux"},
+    {"word": "Herzlichen Glückwunsch", "fr": "Félicitations"},
+  ],
+  "Portugais": [
+    {"word": "Como você está?", "fr": "Comment vas-tu ?"},
+    {"word": "Qual é o seu nome?", "fr": "Comment tu t'appelles ?"},
+    {"word": "Prazer em conhecê-lo", "fr": "Enchanté"},
+    {"word": "Não entendo", "fr": "Je ne comprends pas"},
+    {"word": "Você pode me ajudar?", "fr": "Peux-tu m'aider ?"},
+    {"word": "Onde fica o banheiro?", "fr": "Où sont les toilettes ?"},
+    {"word": "Quanto custa?", "fr": "Combien ça coûte ?"},
+    {"word": "Eu gostaria de...", "fr": "Je voudrais..."},
+    {"word": "Até mais tarde", "fr": "À plus tard"},
+    {"word": "Tenha um bom dia", "fr": "Bonne journée"},
+    {"word": "Que horas são?", "fr": "Quelle heure est-il ?"},
+    {"word": "Estou com fome", "fr": "J'ai faim"},
+    {"word": "Estou com sede", "fr": "J'ai soif"},
+    {"word": "Estou cansado", "fr": "Je suis fatigué"},
+    {"word": "De onde você é?", "fr": "D'où viens-tu ?"},
+    {"word": "Eu falo um pouco", "fr": "Je parle un peu"},
+    {"word": "Pode repetir?", "fr": "Peux-tu répéter ?"},
+    {"word": "Mais devagar por favor", "fr": "Plus lentement s'il te plaît"},
+    {"word": "Está delicioso", "fr": "C'est délicieux"},
+    {"word": "Parabéns", "fr": "Félicitations"},
+  ],
+  "Arabe": [
+    {"word": "كيف حالك؟", "fr": "Comment vas-tu ?"},
+    {"word": "ما اسمك؟", "fr": "Comment tu t'appelles ?"},
+    {"word": "تشرفنا", "fr": "Enchanté"},
+    {"word": "لا أفهم", "fr": "Je ne comprends pas"},
+    {"word": "هل يمكنك مساعدتي؟", "fr": "Peux-tu m'aider ?"},
+    {"word": "أين الحمام؟", "fr": "Où sont les toilettes ?"},
+    {"word": "كم الثمن؟", "fr": "Combien ça coûte ?"},
+    {"word": "أريد...", "fr": "Je voudrais..."},
+    {"word": "إلى اللقاء", "fr": "À plus tard"},
+    {"word": "يوم سعيد", "fr": "Bonne journée"},
+    {"word": "كم الساعة؟", "fr": "Quelle heure est-il ?"},
+    {"word": "أنا جائع", "fr": "J'ai faim"},
+    {"word": "أنا عطشان", "fr": "J'ai soif"},
+    {"word": "أنا متعب", "fr": "Je suis fatigué"},
+    {"word": "من أين أنت؟", "fr": "D'où viens-tu ?"},
+    {"word": "أتكلم قليلا", "fr": "Je parle un peu"},
+    {"word": "هل يمكنك التكرار؟", "fr": "Peux-tu répéter ?"},
+    {"word": "ببطء من فضلك", "fr": "Plus lentement s'il te plaît"},
+    {"word": "شكرا جزيلا", "fr": "Merci beaucoup"},
+    {"word": "مبروك", "fr": "Félicitations"},
+  ],
+  "Japonais": [
+    {"word": "元気ですか", "fr": "Comment vas-tu ?"},
+    {"word": "お名前は何ですか", "fr": "Comment tu t'appelles ?"},
+    {"word": "はじめまして", "fr": "Enchanté"},
+    {"word": "わかりません", "fr": "Je ne comprends pas"},
+    {"word": "手伝ってくれますか", "fr": "Peux-tu m'aider ?"},
+    {"word": "トイレはどこですか", "fr": "Où sont les toilettes ?"},
+    {"word": "いくらですか", "fr": "Combien ça coûte ?"},
+    {"word": "お願いします", "fr": "Je voudrais / S'il vous plaît"},
+    {"word": "また後で", "fr": "À plus tard"},
+    {"word": "良い一日を", "fr": "Bonne journée"},
+    {"word": "何時ですか", "fr": "Quelle heure est-il ?"},
+    {"word": "お腹が空きました", "fr": "J'ai faim"},
+    {"word": "喉が渇きました", "fr": "J'ai soif"},
+    {"word": "疲れました", "fr": "Je suis fatigué"},
+    {"word": "出身はどこですか", "fr": "D'où viens-tu ?"},
+    {"word": "少し話せます", "fr": "Je parle un peu"},
+    {"word": "もう一度言ってください", "fr": "Peux-tu répéter ?"},
+    {"word": "ゆっくり話してください", "fr": "Plus lentement s'il te plaît"},
+    {"word": "おいしいです", "fr": "C'est délicieux"},
+    {"word": "おめでとう", "fr": "Félicitations"},
+  ],
+  "Chinois": [
+    {"word": "你好吗", "fr": "Comment vas-tu ?"},
+    {"word": "你叫什么名字", "fr": "Comment tu t'appelles ?"},
+    {"word": "很高兴认识你", "fr": "Enchanté"},
+    {"word": "我不明白", "fr": "Je ne comprends pas"},
+    {"word": "你能帮我吗", "fr": "Peux-tu m'aider ?"},
+    {"word": "洗手间在哪里", "fr": "Où sont les toilettes ?"},
+    {"word": "多少钱", "fr": "Combien ça coûte ?"},
+    {"word": "我想要...", "fr": "Je voudrais..."},
+    {"word": "回头见", "fr": "À plus tard"},
+    {"word": "祝你今天愉快", "fr": "Bonne journée"},
+    {"word": "现在几点", "fr": "Quelle heure est-il ?"},
+    {"word": "我饿了", "fr": "J'ai faim"},
+    {"word": "我渴了", "fr": "J'ai soif"},
+    {"word": "我累了", "fr": "Je suis fatigué"},
+    {"word": "你是哪里人", "fr": "D'où viens-tu ?"},
+    {"word": "我会说一点", "fr": "Je parle un peu"},
+    {"word": "你能再说一遍吗", "fr": "Peux-tu répéter ?"},
+    {"word": "请说慢一点", "fr": "Plus lentement s'il te plaît"},
+    {"word": "很好吃", "fr": "C'est délicieux"},
+    {"word": "恭喜", "fr": "Félicitations"},
+  ],
+};
+
 class CatSprite extends StatefulWidget {
-  const CatSprite({super.key});
+  final Color patchColor;
+  const CatSprite({super.key, this.patchColor = const Color(0xFF1A1A1A)});
 
   @override
   State<CatSprite> createState() => _CatSpriteState();
@@ -383,7 +597,7 @@ class _CatSpriteState extends State<CatSprite>
       builder: (context, child) {
         return CustomPaint(
           size: const Size(60, 66),
-          painter: CatPainter(walkValue: _walkCycle.value),
+          painter: CatPainter(walkValue: _walkCycle.value, patchColor: widget.patchColor),
         );
       },
     );
@@ -392,7 +606,8 @@ class _CatSpriteState extends State<CatSprite>
 
 class CatPainter extends CustomPainter {
   final double walkValue;
-  CatPainter({required this.walkValue});
+  final Color patchColor;
+  CatPainter({required this.walkValue, this.patchColor = const Color(0xFF1A1A1A)});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -415,6 +630,7 @@ class CatPainter extends CustomPainter {
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
+    final patchFill = Paint()..color = patchColor;
 
     canvas.drawLine(const Offset(-8, 24), const Offset(16, 26), whiskerPaint);
     canvas.drawLine(const Offset(-8, 30), const Offset(16, 30), whiskerPaint);
@@ -423,6 +639,7 @@ class CatPainter extends CustomPainter {
     canvas.drawLine(const Offset(54, 30), const Offset(78, 28), whiskerPaint);
     canvas.drawLine(const Offset(54, 33), const Offset(78, 35), whiskerPaint);
 
+    // Queue (pivote autour du point d'attache au corps)
     canvas.save();
     canvas.translate(62, 66);
     final tailAngle = (-8 + walkValue * 18) * math.pi / 180;
@@ -460,6 +677,7 @@ class CatPainter extends CustomPainter {
     drawLeg(28, 68, true);
     drawLeg(38, 68, false);
 
+    // Corps
     final bodyRect = Rect.fromCenter(center: const Offset(45, 62), width: 56, height: 40);
     canvas.drawOval(bodyRect, whiteFill);
     canvas.drawOval(bodyRect, blackStroke);
@@ -467,7 +685,7 @@ class CatPainter extends CustomPainter {
     canvas.clipPath(Path()..addOval(bodyRect));
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(66, 55), width: 36, height: 44),
-      blackFill,
+      patchFill,
     );
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(35, 70), width: 20, height: 14),
@@ -478,16 +696,18 @@ class CatPainter extends CustomPainter {
     drawLeg(52, 76, true);
     drawLeg(62, 76, false);
 
+    // Tete
     canvas.drawCircle(const Offset(35, 28), 26, whiteFill);
     canvas.drawCircle(const Offset(35, 28), 26, blackStroke);
     canvas.save();
     canvas.clipPath(Path()..addOval(Rect.fromCircle(center: const Offset(35, 28), radius: 26)));
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(50, 20), width: 32, height: 36),
-      blackFill,
+      patchFill,
     );
     canvas.restore();
 
+    // Oreille gauche
     final earLeftFill = Path()
       ..moveTo(13, 10)
       ..quadraticBezierTo(9, -3, 18, -12)
@@ -501,6 +721,7 @@ class CatPainter extends CustomPainter {
       ..quadraticBezierTo(26, -2, 29, 8);
     canvas.drawPath(earLeftStroke, blackStroke);
 
+    // Oreille droite
     final earRightFill = Path()
       ..moveTo(39, 6)
       ..quadraticBezierTo(44, -6, 48, -14)
@@ -514,6 +735,7 @@ class CatPainter extends CustomPainter {
       ..quadraticBezierTo(57, -4, 57, 10);
     canvas.drawPath(earRightStroke, blackStroke);
 
+    // Interieur des oreilles (rose)
     final innerLeft = Path()
       ..moveTo(17, 6)
       ..quadraticBezierTo(16, -2, 20, -6)
@@ -529,6 +751,7 @@ class CatPainter extends CustomPainter {
       ..close();
     canvas.drawPath(innerRight, pinkFill);
 
+    // Joues
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(14, 35), width: 10, height: 7),
       Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.85),
@@ -538,6 +761,7 @@ class CatPainter extends CustomPainter {
       Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.6),
     );
 
+    // Yeux
     canvas.drawCircle(const Offset(22, 26), 5.5, blackFill);
     canvas.drawCircle(const Offset(38, 26), 5.5, blackFill);
     canvas.drawCircle(const Offset(20.5, 24), 1.6, whiteFill);
@@ -546,6 +770,7 @@ class CatPainter extends CustomPainter {
     canvas.drawCircle(const Offset(24, 28), 0.9, smallHighlight);
     canvas.drawCircle(const Offset(40, 28), 0.9, smallHighlight);
 
+    // Nez (triangle)
     final nosePath = Path()
       ..moveTo(26.5, 34)
       ..lineTo(33, 34)
@@ -561,6 +786,7 @@ class CatPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
+    // Bouche
     final mouthPaint = Paint()
       ..color = const Color(0xFF1A1A1A)
       ..style = PaintingStyle.stroke
@@ -579,6 +805,7 @@ class CatPainter extends CustomPainter {
       mouthPaint,
     );
 
+    // Moustaches pres du museau
     canvas.drawLine(const Offset(20, 34), const Offset(2, 32), whiskerPaint);
     canvas.drawLine(const Offset(20, 36), const Offset(2, 38), whiskerPaint);
     canvas.drawLine(const Offset(40, 34), const Offset(58, 32), whiskerPaint);
@@ -595,11 +822,13 @@ class WalkingCat extends StatefulWidget {
   final double startX;
   final double startY;
   final String language;
+  final String bankType;
   const WalkingCat({
     super.key,
     required this.startX,
     required this.startY,
     required this.language,
+    required this.bankType,
   });
 
   @override
@@ -632,7 +861,8 @@ class _WalkingCatState extends State<WalkingCat> {
   }
 
   void _onTap() async {
-    final words = wordBank[widget.language] ?? wordBank["Anglais"]!;
+    final bank = widget.bankType == "expressions" ? phraseBank : wordBank;
+    final words = bank[widget.language] ?? bank["Anglais"]!;
     final chosen = words[_rng.nextInt(words.length)];
     setState(() {
       _bubbleWord = chosen;
@@ -717,7 +947,25 @@ class _WalkingCatState extends State<WalkingCat> {
               transform: Matrix4.rotationY(_facingRight ? 0 : 3.1416),
               child: Transform.scale(
                 scale: _growth,
-                child: const CatSprite(),
+                child: CatSprite(
+                  patchColor: widget.bankType == "expressions"
+                      ? const Color(0xFFFFC107)
+                      : const Color(0xFF1A1A1A),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 66,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  widget.bankType == "expressions" ? "Expressions" : "Mots",
+                  style: const TextStyle(fontSize: 10, color: Colors.black54),
+                ),
               ),
             ),
           ],
@@ -736,9 +984,18 @@ class WalkingCatsBackground extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     return Stack(
       children: [
-        WalkingCat(startX: size.width * 0.2, startY: size.height * 0.6, language: language),
-        WalkingCat(startX: size.width * 0.6, startY: size.height * 0.7, language: language),
-        WalkingCat(startX: size.width * 0.8, startY: size.height * 0.55, language: language),
+        WalkingCat(
+          startX: size.width * 0.25,
+          startY: size.height * 0.6,
+          language: language,
+          bankType: "mots",
+        ),
+        WalkingCat(
+          startX: size.width * 0.65,
+          startY: size.height * 0.6,
+          language: language,
+          bankType: "expressions",
+        ),
       ],
     );
   }
@@ -1015,3 +1272,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
