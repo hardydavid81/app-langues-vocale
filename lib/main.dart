@@ -598,6 +598,32 @@ class _WalkingCatState extends State<WalkingCat> {
   int _historyIndex = -1;
   bool _revealed = false;
   int _bubbleGen = 0;
+  String? _scrambledHint;
+
+  String _scrambleWord(String word) {
+    final chars = word.split('');
+    final letterPositions = <int>[];
+    final letters = <String>[];
+    for (int i = 0; i < chars.length; i++) {
+      if (RegExp(r'[A-Za-zÀ-ÿ]').hasMatch(chars[i])) {
+        letterPositions.add(i);
+        letters.add(chars[i]);
+      }
+    }
+    if (letters.length > 1) {
+      String shuffled;
+      int attempts = 0;
+      do {
+        letters.shuffle(_rng);
+        shuffled = letters.join();
+        attempts++;
+      } while (shuffled == word.replaceAll(RegExp(r'[^A-Za-zÀ-ÿ]'), '') && attempts < 5);
+    }
+    for (int i = 0; i < letterPositions.length; i++) {
+      chars[letterPositions[i]] = letters[i];
+    }
+    return chars.join();
+  }
 
   Map<String, List<Map<String, String>>> get _bank {
     switch (widget.bankType) {
@@ -696,6 +722,7 @@ class _WalkingCatState extends State<WalkingCat> {
       _historyIndex = _history.length - 1;
       _bubbleWord = chosen;
       _revealed = !widget.reversedMode;
+      _scrambledHint = widget.reversedMode ? _scrambleWord(chosen["word"]!) : null;
     });
     if (!widget.reversedMode) {
       final locale = languageLocales[widget.language] ?? "en-US";
@@ -774,56 +801,84 @@ class _WalkingCatState extends State<WalkingCat> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.black87, width: 1),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.reversedMode && !_revealed) ...[
-                        Text(
-                          _bubbleWord!["fr"]!,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        GestureDetector(
-                          onTap: _onReveal,
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.indigo,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              "Deviner ?",
-                              style: TextStyle(fontSize: 11, color: Colors.white),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.black87, width: 1),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.reversedMode && !_revealed) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            child: Text(
+                              _bubbleWord!["fr"]!,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                           ),
-                        ),
-                      ] else ...[
-                        Text(
-                          _bubbleWord!["word"]!,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        Text(
-                          _bubbleWord!["fr"]!,
-                          style: const TextStyle(fontSize: 11, color: Colors.black54),
-                        ),
+                          GestureDetector(
+                            onTap: _onReveal,
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              color: Colors.indigo,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_scrambledHint != null)
+                                    Text(
+                                      _scrambledHint!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white70,
+                                        letterSpacing: 2,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  const Text(
+                                    "Deviner ?",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ] else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _bubbleWord!["word"]!,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                Text(
+                                  _bubbleWord!["fr"]!,
+                                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
                 if (_historyIndex > 0)
                   Positioned(
                     top: -12,
-                    left: -12,
+                    left: widget.facingRight ? null : -12,
+                    right: widget.facingRight ? -12 : null,
                     child: GestureDetector(
                       onTap: _onBack,
                       behavior: HitTestBehavior.opaque,
