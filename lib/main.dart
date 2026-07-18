@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
@@ -66,10 +67,335 @@ const List<Character> characters = [
   ),
 ];
 
+final Map<String, String> languageLocales = {
+  "Anglais": "en-US",
+  "Espagnol": "es-ES",
+  "Italien": "it-IT",
+  "Allemand": "de-DE",
+  "Portugais": "pt-PT",
+  "Arabe": "ar-SA",
+  "Japonais": "ja-JP",
+  "Chinois": "zh-CN",
+};
+
+final Map<String, List<Map<String, String>>> wordBank = {
+  "Anglais": [
+    {"word": "Hello", "fr": "Bonjour"},
+    {"word": "Cat", "fr": "Chat"},
+    {"word": "Friend", "fr": "Ami"},
+    {"word": "Happy", "fr": "Heureux"},
+    {"word": "Water", "fr": "Eau"},
+    {"word": "Beautiful", "fr": "Beau/Belle"},
+  ],
+  "Espagnol": [
+    {"word": "Hola", "fr": "Bonjour"},
+    {"word": "Gato", "fr": "Chat"},
+    {"word": "Amigo", "fr": "Ami"},
+    {"word": "Feliz", "fr": "Heureux"},
+    {"word": "Agua", "fr": "Eau"},
+    {"word": "Hermoso", "fr": "Beau"},
+  ],
+  "Italien": [
+    {"word": "Ciao", "fr": "Bonjour"},
+    {"word": "Gatto", "fr": "Chat"},
+    {"word": "Amico", "fr": "Ami"},
+    {"word": "Felice", "fr": "Heureux"},
+    {"word": "Acqua", "fr": "Eau"},
+    {"word": "Bello", "fr": "Beau"},
+  ],
+  "Allemand": [
+    {"word": "Hallo", "fr": "Bonjour"},
+    {"word": "Katze", "fr": "Chat"},
+    {"word": "Freund", "fr": "Ami"},
+    {"word": "Glücklich", "fr": "Heureux"},
+    {"word": "Wasser", "fr": "Eau"},
+    {"word": "Schön", "fr": "Beau"},
+  ],
+  "Portugais": [
+    {"word": "Olá", "fr": "Bonjour"},
+    {"word": "Gato", "fr": "Chat"},
+    {"word": "Amigo", "fr": "Ami"},
+    {"word": "Feliz", "fr": "Heureux"},
+    {"word": "Água", "fr": "Eau"},
+    {"word": "Bonito", "fr": "Beau"},
+  ],
+  "Arabe": [
+    {"word": "مرحبا", "fr": "Bonjour"},
+    {"word": "قطة", "fr": "Chat"},
+    {"word": "صديق", "fr": "Ami"},
+    {"word": "سعيد", "fr": "Heureux"},
+    {"word": "ماء", "fr": "Eau"},
+    {"word": "جميل", "fr": "Beau"},
+  ],
+  "Japonais": [
+    {"word": "こんにちは", "fr": "Bonjour"},
+    {"word": "猫", "fr": "Chat"},
+    {"word": "友達", "fr": "Ami"},
+    {"word": "幸せ", "fr": "Heureux"},
+    {"word": "水", "fr": "Eau"},
+    {"word": "綺麗", "fr": "Beau"},
+  ],
+  "Chinois": [
+    {"word": "你好", "fr": "Bonjour"},
+    {"word": "猫", "fr": "Chat"},
+    {"word": "朋友", "fr": "Ami"},
+    {"word": "开心", "fr": "Heureux"},
+    {"word": "水", "fr": "Eau"},
+    {"word": "漂亮", "fr": "Beau"},
+  ],
+};
+
+class CatSprite extends StatefulWidget {
+  const CatSprite({super.key});
+
+  @override
+  State<CatSprite> createState() => _CatSpriteState();
+}
+
+class _CatSpriteState extends State<CatSprite>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _walkCycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _walkCycle = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _walkCycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _walkCycle,
+      builder: (context, child) {
+        return CustomPaint(
+          size: const Size(60, 66),
+          painter: CatPainter(walkValue: _walkCycle.value),
+        );
+      },
+    );
+  }
+}
+
+class CatPainter extends CustomPainter {
+  final double walkValue;
+  CatPainter({required this.walkValue});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 100.0;
+    canvas.save();
+    canvas.scale(scale);
+    canvas.translate(0, 20);
+
+    final blackFill = Paint()..color = const Color(0xFF1A1A1A);
+    final blackStroke = Paint()
+      ..color = const Color(0xFF1A1A1A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final whiteFill = Paint()..color = Colors.white;
+    final pinkFill = Paint()..color = const Color(0xFFFFC2D1);
+    final whiskerPaint = Paint()
+      ..color = const Color(0xFF1A1A1A).withOpacity(0.7)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(const Offset(-8, 24), const Offset(16, 26), whiskerPaint);
+    canvas.drawLine(const Offset(-8, 30), const Offset(16, 30), whiskerPaint);
+    canvas.drawLine(const Offset(-8, 36), const Offset(16, 33), whiskerPaint);
+    canvas.drawLine(const Offset(54, 26), const Offset(78, 22), whiskerPaint);
+    canvas.drawLine(const Offset(54, 30), const Offset(78, 28), whiskerPaint);
+    canvas.drawLine(const Offset(54, 33), const Offset(78, 35), whiskerPaint);
+
+    canvas.save();
+    canvas.translate(62, 66);
+    final tailAngle = (-8 + walkValue * 18) * math.pi / 180;
+    canvas.rotate(tailAngle);
+    canvas.translate(-62, -66);
+    final tailPath = Path()
+      ..moveTo(62, 66)
+      ..quadraticBezierTo(92, 68, 92, 45)
+      ..quadraticBezierTo(90, 30, 76, 32);
+    canvas.drawPath(
+      tailPath,
+      Paint()
+        ..color = const Color(0xFF1A1A1A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.restore();
+
+    void drawLeg(double x, double yTop, bool sameSide) {
+      final angle = sameSide ? walkValue : 1 - walkValue;
+      final tilt = (angle - 0.5) * 28 * math.pi / 180;
+      canvas.save();
+      canvas.translate(x + 3, yTop);
+      canvas.rotate(tilt);
+      canvas.translate(-(x + 3), -yTop);
+      final rrect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, yTop, 6, 14),
+        const Radius.circular(3),
+      );
+      canvas.drawRRect(rrect, blackFill);
+      canvas.restore();
+    }
+
+    drawLeg(28, 68, true);
+    drawLeg(38, 68, false);
+
+    final bodyRect = Rect.fromCenter(center: const Offset(45, 62), width: 56, height: 40);
+    canvas.drawOval(bodyRect, whiteFill);
+    canvas.drawOval(bodyRect, blackStroke);
+    canvas.save();
+    canvas.clipPath(Path()..addOval(bodyRect));
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(66, 55), width: 36, height: 44),
+      blackFill,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(35, 70), width: 20, height: 14),
+      Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.55),
+    );
+    canvas.restore();
+
+    drawLeg(52, 76, true);
+    drawLeg(62, 76, false);
+
+    canvas.drawCircle(const Offset(35, 28), 26, whiteFill);
+    canvas.drawCircle(const Offset(35, 28), 26, blackStroke);
+    canvas.save();
+    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: const Offset(35, 28), radius: 26)));
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(50, 20), width: 32, height: 36),
+      blackFill,
+    );
+    canvas.restore();
+
+    final earLeftFill = Path()
+      ..moveTo(13, 10)
+      ..quadraticBezierTo(9, -3, 18, -12)
+      ..quadraticBezierTo(26, -2, 29, 8)
+      ..quadraticBezierTo(21, 4, 13, 10)
+      ..close();
+    canvas.drawPath(earLeftFill, whiteFill);
+    final earLeftStroke = Path()
+      ..moveTo(13, 10)
+      ..quadraticBezierTo(9, -3, 18, -12)
+      ..quadraticBezierTo(26, -2, 29, 8);
+    canvas.drawPath(earLeftStroke, blackStroke);
+
+    final earRightFill = Path()
+      ..moveTo(39, 6)
+      ..quadraticBezierTo(44, -6, 48, -14)
+      ..quadraticBezierTo(57, -4, 57, 10)
+      ..quadraticBezierTo(48, 4, 39, 6)
+      ..close();
+    canvas.drawPath(earRightFill, whiteFill);
+    final earRightStroke = Path()
+      ..moveTo(39, 6)
+      ..quadraticBezierTo(44, -6, 48, -14)
+      ..quadraticBezierTo(57, -4, 57, 10);
+    canvas.drawPath(earRightStroke, blackStroke);
+
+    final innerLeft = Path()
+      ..moveTo(17, 6)
+      ..quadraticBezierTo(16, -2, 20, -6)
+      ..quadraticBezierTo(24, -1, 25, 7)
+      ..quadraticBezierTo(21, 4, 17, 6)
+      ..close();
+    canvas.drawPath(innerLeft, pinkFill);
+    final innerRight = Path()
+      ..moveTo(43, 3)
+      ..quadraticBezierTo(45, -4, 48, -9)
+      ..quadraticBezierTo(53, -3, 53, 5)
+      ..quadraticBezierTo(48, 2, 43, 3)
+      ..close();
+    canvas.drawPath(innerRight, pinkFill);
+
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(14, 35), width: 10, height: 7),
+      Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.85),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(46, 38), width: 10, height: 7),
+      Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.6),
+    );
+
+    canvas.drawCircle(const Offset(22, 26), 5.5, blackFill);
+    canvas.drawCircle(const Offset(38, 26), 5.5, blackFill);
+    canvas.drawCircle(const Offset(20.5, 24), 1.6, whiteFill);
+    canvas.drawCircle(const Offset(36.5, 24), 1.6, whiteFill);
+    final smallHighlight = Paint()..color = Colors.white.withOpacity(0.8);
+    canvas.drawCircle(const Offset(24, 28), 0.9, smallHighlight);
+    canvas.drawCircle(const Offset(40, 28), 0.9, smallHighlight);
+
+    final nosePath = Path()
+      ..moveTo(26.5, 34)
+      ..lineTo(33, 34)
+      ..lineTo(29.75, 38.5)
+      ..close();
+    canvas.drawPath(nosePath, Paint()..color = const Color(0xFFFF8FAB));
+    canvas.drawPath(
+      nosePath,
+      Paint()
+        ..color = const Color(0xFF1A1A1A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    final mouthPaint = Paint()
+      ..color = const Color(0xFF1A1A1A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(
+      Path()
+        ..moveTo(29.75, 38.5)
+        ..quadraticBezierTo(27.5, 42, 23, 40),
+      mouthPaint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(29.75, 38.5)
+        ..quadraticBezierTo(32, 42, 36.5, 40),
+      mouthPaint,
+    );
+
+    canvas.drawLine(const Offset(20, 34), const Offset(2, 32), whiskerPaint);
+    canvas.drawLine(const Offset(20, 36), const Offset(2, 38), whiskerPaint);
+    canvas.drawLine(const Offset(40, 34), const Offset(58, 32), whiskerPaint);
+    canvas.drawLine(const Offset(40, 36), const Offset(58, 38), whiskerPaint);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CatPainter oldDelegate) => oldDelegate.walkValue != walkValue;
+}
+
 class WalkingCat extends StatefulWidget {
   final double startX;
   final double startY;
-  const WalkingCat({super.key, required this.startX, required this.startY});
+  final String language;
+  const WalkingCat({
+    super.key,
+    required this.startX,
+    required this.startY,
+    required this.language,
+  });
 
   @override
   State<WalkingCat> createState() => _WalkingCatState();
@@ -80,6 +406,8 @@ class _WalkingCatState extends State<WalkingCat> {
   late double _y;
   bool _facingRight = true;
   Duration _duration = const Duration(seconds: 3);
+  final FlutterTts _catTts = FlutterTts();
+  Map<String, String>? _bubbleWord;
 
   @override
   void initState() {
@@ -87,6 +415,30 @@ class _WalkingCatState extends State<WalkingCat> {
     _x = widget.startX;
     _y = widget.startY;
     WidgetsBinding.instance.addPostFrameCallback((_) => _walkToNewSpot());
+  }
+
+  @override
+  void dispose() {
+    _catTts.stop();
+    super.dispose();
+  }
+
+  void _onTap() async {
+    final words = wordBank[widget.language] ?? wordBank["Anglais"]!;
+    final chosen = words[DateTime.now().millisecond % words.length];
+    setState(() {
+      _bubbleWord = chosen;
+    });
+    final locale = languageLocales[widget.language] ?? "en-US";
+    await _catTts.setLanguage(locale);
+    await _catTts.speak(chosen["word"]!);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _bubbleWord = null;
+        });
+      }
+    });
   }
 
   void _walkToNewSpot() {
@@ -115,29 +467,65 @@ class _WalkingCatState extends State<WalkingCat> {
       curve: Curves.easeInOut,
       left: _x,
       top: _y,
-      child: Transform(
-        alignment: Alignment.center,
-        transform: Matrix4.rotationY(_facingRight ? 0 : 3.1416),
-        child: const Text("🐱", style: TextStyle(fontSize: 28)),
+      child: GestureDetector(
+        onTap: _onTap,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
+          children: [
+            if (_bubbleWord != null)
+              Positioned(
+                top: -70,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black87, width: 1),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _bubbleWord!["word"]!,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Text(
+                        _bubbleWord!["fr"]!,
+                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.rotationY(_facingRight ? 0 : 3.1416),
+              child: const CatSprite(),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class WalkingCatsBackground extends StatelessWidget {
-  const WalkingCatsBackground({super.key});
+  final String language;
+  const WalkingCatsBackground({super.key, required this.language});
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          WalkingCat(startX: size.width * 0.2, startY: size.height * 0.6),
-          WalkingCat(startX: size.width * 0.6, startY: size.height * 0.7),
-          WalkingCat(startX: size.width * 0.8, startY: size.height * 0.55),
-        ],
-      ),
+    return Stack(
+      children: [
+        WalkingCat(startX: size.width * 0.2, startY: size.height * 0.6, language: language),
+        WalkingCat(startX: size.width * 0.6, startY: size.height * 0.7, language: language),
+        WalkingCat(startX: size.width * 0.8, startY: size.height * 0.55, language: language),
+      ],
     );
   }
 }
@@ -359,7 +747,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Stack(
         children: [
-          const Positioned.fill(child: WalkingCatsBackground()),
+          Positioned.fill(child: WalkingCatsBackground(language: _selectedLanguage)),
           Column(
             children: [
               Expanded(
