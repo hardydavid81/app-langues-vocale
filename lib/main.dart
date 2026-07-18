@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:convert';
 
-const String geminiApiKey = "AQ.Ab8RN6IE3ZQOi5FJlFdRxwZHyM9OC_PLACEHOLDER";
-
 void main() {
   runApp(const MyApp());
 }
@@ -75,13 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollToBottom();
     try {
       final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+        'https://gemini-proxyhardydavid-81workersdev.hardydavid-81.workers.dev',
       );
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'X-goog-api-key': geminiApiKey,
         },
         body: jsonEncode({
           "contents": [
