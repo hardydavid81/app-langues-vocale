@@ -716,6 +716,37 @@ class _WalkingCatState extends State<WalkingCat> {
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
+        GestureDetector(
+          onTap: _onTap,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.rotationY(widget.facingRight ? 0 : 3.1416),
+            child: CatSprite(
+              patchColor: _patchColor,
+              size: widget.catSize,
+              tailStyle: _tailStyle,
+              cycleDuration: _cycleDuration,
+            ),
+          ),
+        ),
+        Positioned(
+          top: widget.catSize.height,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ),
         if (_bubbleWord != null)
           Positioned(
             top: widget.catSize.height * 0.38,
@@ -776,39 +807,8 @@ class _WalkingCatState extends State<WalkingCat> {
               ),
             ),
           ),
-        GestureDetector(
-          onTap: _onTap,
-          child: Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.rotationY(widget.facingRight ? 0 : 3.1416),
-            child: CatSprite(
-              patchColor: _patchColor,
-              size: widget.catSize,
-              tailStyle: _tailStyle,
-              cycleDuration: _cycleDuration,
-            ),
-          ),
-        ),
-        Positioned(
-          top: widget.catSize.height,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
+      ],
+    );
   }
 }
 
