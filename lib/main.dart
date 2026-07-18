@@ -874,30 +874,30 @@ class _WalkingCatState extends State<WalkingCat> {
                     ),
                   ),
                 ),
-                if (_historyIndex > 0)
-                  Positioned(
-                    top: -12,
-                    left: widget.facingRight ? null : -12,
-                    right: widget.facingRight ? -12 : null,
-                    child: GestureDetector(
-                      onTap: _onBack,
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.indigo,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                          ],
-                        ),
-                        child: const Icon(Icons.undo, size: 18, color: Colors.white),
-                      ),
-                    ),
-                  ),
               ],
+            ),
+          ),
+        if (_historyIndex > 0)
+          Positioned(
+            top: widget.catSize.height * 0.4,
+            left: widget.facingRight ? widget.catSize.width * 0.78 : null,
+            right: widget.facingRight ? null : widget.catSize.width * 0.78,
+            child: GestureDetector(
+              onTap: _onBack,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.indigo,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                  ],
+                ),
+                child: const Icon(Icons.undo, size: 18, color: Colors.white),
+              ),
             ),
           ),
       ],
