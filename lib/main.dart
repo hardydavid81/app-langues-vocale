@@ -599,6 +599,18 @@ class _WalkingCatState extends State<WalkingCat> {
   bool _revealed = false;
   int _bubbleGen = 0;
   String? _scrambledHint;
+  List<String>? _options;
+  String? _selectedOption;
+
+  List<String> _buildOptions(Map<String, String> correct) {
+    final bank = _bank[widget.language] ?? _bank["Anglais"]!;
+    final pool = bank.where((e) => e["word"] != correct["word"]).toList()
+      ..shuffle(_rng);
+    final distractors = pool.take(2).map((e) => e["word"]!).toList();
+    final opts = [correct["word"]!, ...distractors];
+    opts.shuffle(_rng);
+    return opts;
+  }
 
   String _scrambleWord(String word) {
     final chars = word.split('');
@@ -723,6 +735,8 @@ class _WalkingCatState extends State<WalkingCat> {
       _bubbleWord = chosen;
       _revealed = !widget.reversedMode;
       _scrambledHint = widget.reversedMode ? _scrambleWord(chosen["word"]!) : null;
+      _options = widget.reversedMode ? _buildOptions(chosen) : null;
+      _selectedOption = null;
     });
     if (!widget.reversedMode) {
       final locale = languageLocales[widget.language] ?? "en-US";
@@ -730,13 +744,15 @@ class _WalkingCatState extends State<WalkingCat> {
       await _catTts.speak(chosen["word"]!);
       _scheduleAutoHide(myGen);
     }
-    // En mode inversé, on attend que l'utilisateur appuie sur "Deviner"
-    // avant de révéler le mot et de programmer la disparition de la bulle.
+    // En mode inversé, on attend que l'utilisateur choisisse une réponse
+    // parmi le QCM avant de révéler le mot et de programmer la disparition.
   }
 
-  void _onReveal() async {
+  void _onSelectOption(String option) async {
+    if (_selectedOption != null) return;
     final myGen = _bubbleGen;
     setState(() {
+      _selectedOption = option;
       _revealed = true;
     });
     final locale = languageLocales[widget.language] ?? "en-US";
@@ -752,6 +768,8 @@ class _WalkingCatState extends State<WalkingCat> {
       _historyIndex--;
       _bubbleWord = _history[_historyIndex];
       _revealed = true;
+      _selectedOption = null;
+      _options = null;
     });
     _scheduleAutoHide(myGen);
   }
@@ -818,38 +836,44 @@ class _WalkingCatState extends State<WalkingCat> {
                         if (widget.reversedMode && !_revealed) ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            child: Text(
-                              _bubbleWord!["fr"]!,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: _onReveal,
-                            behavior: HitTestBehavior.opaque,
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              color: Colors.indigo,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_scrambledHint != null)
-                                    Text(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _bubbleWord!["fr"]!,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                if (_scrambledHint != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
                                       _scrambledHint!,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white70,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.indigo.shade300,
                                         letterSpacing: 2,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  const Text(
-                                    "Deviner ?",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 11, color: Colors.white),
                                   ),
-                                ],
+                              ],
+                            ),
+                          ),
+                          ...?_options?.map(
+                            (opt) => GestureDetector(
+                              onTap: () => _onSelectOption(opt),
+                              behavior: HitTestBehavior.opaque,
+                              child: Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(top: 2),
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                color: Colors.indigo,
+                                child: Text(
+                                  opt,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 11, color: Colors.white),
+                                ),
                               ),
                             ),
                           ),
@@ -867,6 +891,22 @@ class _WalkingCatState extends State<WalkingCat> {
                                   _bubbleWord!["fr"]!,
                                   style: const TextStyle(fontSize: 11, color: Colors.black54),
                                 ),
+                                if (_selectedOption != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      _selectedOption == _bubbleWord!["word"]
+                                          ? "✅ Bravo !"
+                                          : "❌ Tu avais dit : $_selectedOption",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: _selectedOption == _bubbleWord!["word"]
+                                            ? Colors.green.shade700
+                                            : Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
