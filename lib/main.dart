@@ -915,6 +915,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isTranslating = false;
   String? _translation;
   String? _errorText;
+  List<String>? _synonyms;
+  bool _loadingSynonyms = false;
 
   final List<String> _languages = [
     "Anglais",
@@ -937,6 +939,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _isTranslating = true;
       _translation = null;
       _errorText = null;
+      _synonyms = null;
     });
     try {
       final url = Uri.parse(
@@ -1004,6 +1007,62 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _errorText = "Erreur : " + e.toString();
         _isTranslating = false;
+      });
+    }
+  }
+
+  Future<void> _fetchSynonyms() async {
+    if (_translation == null || _translation!.trim().isEmpty) return;
+    setState(() {
+      _loadingSynonyms = true;
+      _synonyms = null;
+    });
+    try {
+      final url = Uri.parse(
+        'https://gemini-proxyhardydavid-81workersdev.hardydavid-81.workers.dev',
+      );
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text":
+                      "Donne 4 synonymes courants du mot ou de l'expression suivante, dans la meme langue qu'elle est ecrite. Reponds UNIQUEMENT avec les synonymes separes par des virgules, sans numerotation, sans explication. Texte : " +
+                          _translation!
+                }
+              ]
+            }
+          ],
+          "generationConfig": {"temperature": 0.4, "maxOutputTokens": 128}
+        }),
+      );
+      String text = "";
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final candidates = data['candidates'] as List?;
+        if (candidates != null && candidates.isNotEmpty) {
+          final parts = candidates[0]['content']?['parts'] as List?;
+          if (parts != null) {
+            text = parts.map((p) => (p['text'] ?? "").toString()).join().trim();
+          }
+        }
+      }
+      final syns = text
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+      setState(() {
+        _synonyms = syns;
+        _loadingSynonyms = false;
+      });
+    } catch (e) {
+      setState(() {
+        _synonyms = [];
+        _loadingSynonyms = false;
       });
     }
   }
@@ -1093,77 +1152,77 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Mode inversé (deviner)",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-                Switch(
-                  value: _reversedMode,
-                  activeColor: Colors.indigo,
-                  onChanged: (v) {
-                    setState(() {
-                      _reversedMode = v;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          // Section héro : les 4 chats sont l'identité visuelle de l'app
-          Container(
-            width: double.infinity,
-            height: 300,
-            color: Colors.indigo.shade50,
-            child: CatsHero(language: _selectedLanguage, reversedMode: _reversedMode),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _textController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: "Tapez ou parlez, en français ou en anglais...",
-                    border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Mode inversé (deviner)",
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _listen,
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: _isListening ? Colors.red : Colors.indigo,
-                        child: const Icon(Icons.mic, color: Colors.white, size: 26),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _translate(_textController.text),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text("Traduire"),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  Switch(
+                    value: _reversedMode,
+                    activeColor: Colors.indigo,
+                    onChanged: (v) {
+                      setState(() {
+                        _reversedMode = v;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
+            // Section héro : les 4 chats sont l'identité visuelle de l'app
+            Container(
+              width: double.infinity,
+              height: 300,
+              color: Colors.indigo.shade50,
+              child: CatsHero(language: _selectedLanguage, reversedMode: _reversedMode),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: _textController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      hintText: "Tapez ou parlez, en français ou en anglais...",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _listen,
+                        child: CircleAvatar(
+                          radius: 26,
+                          backgroundColor: _isListening ? Colors.red : Colors.indigo,
+                          child: const Icon(Icons.mic, color: Colors.white, size: 26),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _translate(_textController.text),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text("Traduire"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1184,32 +1243,84 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.indigo.shade100),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: Text(
-                              _translation!,
-                              style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.w600),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _translation!,
+                                  style: const TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.volume_up, color: Colors.indigo),
+                                onPressed: () async {
+                                  await _tts.setLanguage(_selectedCharacter.ttsLocale);
+                                  await _tts.setPitch(_selectedCharacter.pitch);
+                                  await _tts.setSpeechRate(_selectedCharacter.rate);
+                                  await _tts.speak(_translation!);
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: _loadingSynonyms ? null : _fetchSynonyms,
+                              icon: const Icon(Icons.sync_alt, size: 18),
+                              label: const Text("Synonymes"),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.indigo,
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 32),
+                              ),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.volume_up, color: Colors.indigo),
-                            onPressed: () async {
-                              await _tts.setLanguage(_selectedCharacter.ttsLocale);
-                              await _tts.setPitch(_selectedCharacter.pitch);
-                              await _tts.setSpeechRate(_selectedCharacter.rate);
-                              await _tts.speak(_translation!);
-                            },
-                          ),
+                          if (_loadingSynonyms)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 4),
+                              child: SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          if (_synonyms != null && _synonyms!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: _synonyms!
+                                    .map((s) => Chip(
+                                          label: Text(s, style: const TextStyle(fontSize: 12)),
+                                          backgroundColor: Colors.white,
+                                          side: BorderSide(color: Colors.indigo.shade100),
+                                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ))
+                                    .toList(),
+                              ),
+                            )
+                          else if (_synonyms != null && _synonyms!.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 4),
+                              child: Text(
+                                "Aucun synonyme trouvé.",
+                                style: TextStyle(fontSize: 12, color: Colors.black45),
+                              ),
+                            ),
                         ],
                       ),
                     ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
