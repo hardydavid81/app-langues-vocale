@@ -609,8 +609,9 @@ class WalkingCat extends StatefulWidget {
 class _WalkingCatState extends State<WalkingCat> {
   late double _x;
   late double _y;
+  double _dragStartX = 0;
+  double _dragStartY = 0;
   bool _facingRight = true;
-  Duration _duration = const Duration(seconds: 3);
   final FlutterTts _catTts = FlutterTts();
   Map<String, String>? _bubbleWord;
   double _growth = 1.0;
@@ -622,7 +623,6 @@ class _WalkingCatState extends State<WalkingCat> {
     super.initState();
     _x = widget.startX;
     _y = widget.startY;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _walkToNewSpot());
   }
 
   @override
@@ -652,34 +652,34 @@ class _WalkingCatState extends State<WalkingCat> {
     });
   }
 
-  void _walkToNewSpot() {
-    if (!mounted) return;
+  void _onLongPressStart(LongPressStartDetails details) {
+    _dragStartX = _x;
+    _dragStartY = _y;
+  }
+
+  void _onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
     final size = MediaQuery.of(context).size;
-    final newX = 10 + (size.width - 60) * (DateTime.now().microsecond % 1000) / 1000;
-    final newY = size.height * 0.5 +
-        (size.height * 0.35) * ((DateTime.now().millisecond % 1000) / 1000);
-    final distance = (newX - _x).abs();
     setState(() {
-      _facingRight = newX > _x;
-      _duration = Duration(milliseconds: 2000 + (distance * 15).toInt());
-      _x = newX;
-      _y = newY;
+      if (details.offsetFromOrigin.dx.abs() > 2) {
+        _facingRight = details.offsetFromOrigin.dx > 0;
+      }
+      _x = (_dragStartX + details.offsetFromOrigin.dx)
+          .clamp(0, size.width - 60);
+      _y = (_dragStartY + details.offsetFromOrigin.dy)
+          .clamp(0, size.height - 100);
     });
-    Future.delayed(
-      _duration + Duration(milliseconds: 1500 + (DateTime.now().second % 5) * 500),
-      _walkToNewSpot,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedPositioned(
-      duration: _duration,
-      curve: Curves.easeInOut,
+      duration: Duration.zero,
       left: _x,
       top: _y,
       child: GestureDetector(
         onTap: _onTap,
+        onLongPressStart: _onLongPressStart,
+        onLongPressMoveUpdate: _onLongPressMoveUpdate,
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.topCenter,
