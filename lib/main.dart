@@ -20,12 +20,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class ChatMessage {
-  final String text;
-  final bool isUser;
-  ChatMessage(this.text, this.isUser);
-}
-
 class Character {
   final String name;
   final String emoji;
@@ -226,7 +220,16 @@ final Map<String, List<Map<String, String>>> verbBank = {
 
 class CatSprite extends StatefulWidget {
   final Color patchColor;
-  const CatSprite({super.key, this.patchColor = const Color(0xFF1A1A1A)});
+  final Size size;
+  final String tailStyle;
+  final Duration cycleDuration;
+  const CatSprite({
+    super.key,
+    this.patchColor = const Color(0xFF1A1A1A),
+    this.size = const Size(60, 66),
+    this.tailStyle = "classic",
+    this.cycleDuration = const Duration(milliseconds: 400),
+  });
 
   @override
   State<CatSprite> createState() => _CatSpriteState();
@@ -241,7 +244,7 @@ class _CatSpriteState extends State<CatSprite>
     super.initState();
     _walkCycle = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: widget.cycleDuration,
     )..repeat(reverse: true);
   }
 
@@ -257,8 +260,12 @@ class _CatSpriteState extends State<CatSprite>
       animation: _walkCycle,
       builder: (context, child) {
         return CustomPaint(
-          size: const Size(60, 66),
-          painter: CatPainter(walkValue: _walkCycle.value, patchColor: widget.patchColor),
+          size: widget.size,
+          painter: CatPainter(
+            walkValue: _walkCycle.value,
+            patchColor: widget.patchColor,
+            tailStyle: widget.tailStyle,
+          ),
         );
       },
     );
@@ -268,7 +275,12 @@ class _CatSpriteState extends State<CatSprite>
 class CatPainter extends CustomPainter {
   final double walkValue;
   final Color patchColor;
-  CatPainter({required this.walkValue, this.patchColor = const Color(0xFF1A1A1A)});
+  final String tailStyle;
+  CatPainter({
+    required this.walkValue,
+    this.patchColor = const Color(0xFF1A1A1A),
+    this.tailStyle = "classic",
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -306,10 +318,29 @@ class CatPainter extends CustomPainter {
     final tailAngle = (-8 + walkValue * 18) * math.pi / 180;
     canvas.rotate(tailAngle);
     canvas.translate(-62, -66);
-    final tailPath = Path()
-      ..moveTo(62, 66)
-      ..quadraticBezierTo(92, 68, 92, 45)
-      ..quadraticBezierTo(90, 30, 76, 32);
+    final tailPath = Path()..moveTo(62, 66);
+    switch (tailStyle) {
+      case "hooked": // Chiffres : courte, avec un crochet à l'extrémité
+        tailPath
+          ..quadraticBezierTo(86, 58, 88, 42)
+          ..quadraticBezierTo(78, 28, 90, 20);
+        break;
+      case "curled": // Expressions : s'enroule vers le bas
+        tailPath
+          ..quadraticBezierTo(90, 76, 86, 86)
+          ..quadraticBezierTo(72, 88, 60, 80);
+        break;
+      case "stubby": // Verbes : courte et trapue
+        tailPath
+          ..quadraticBezierTo(78, 62, 79, 50)
+          ..quadraticBezierTo(79, 40, 68, 39);
+        break;
+      case "classic": // Mots : arc classique
+      default:
+        tailPath
+          ..quadraticBezierTo(88, 64, 90, 46)
+          ..quadraticBezierTo(86, 30, 70, 26);
+    }
     canvas.drawPath(
       tailPath,
       Paint()
@@ -480,18 +511,16 @@ class CatPainter extends CustomPainter {
 }
 
 class WalkingCat extends StatefulWidget {
-  final double startX;
-  final double startY;
   final String language;
   final String bankType;
   final bool facingRight;
+  final Size catSize;
   const WalkingCat({
     super.key,
-    required this.startX,
-    required this.startY,
     required this.language,
     required this.bankType,
     this.facingRight = true,
+    this.catSize = const Size(60, 66),
   });
 
   @override
@@ -499,16 +528,8 @@ class WalkingCat extends StatefulWidget {
 }
 
 class _WalkingCatState extends State<WalkingCat> {
-  late double _x;
-  late double _y;
-  double _dragStartX = 0;
-  double _dragStartY = 0;
-  late bool _facingRight;
   final FlutterTts _catTts = FlutterTts();
   Map<String, String>? _bubbleWord;
-  double _growth = 1.0;
-  static const double _maxGrowth = 2.5;
-  static const double _growthStep = 0.12;
 
   Map<String, List<Map<String, String>>> get _bank {
     switch (widget.bankType) {
@@ -552,12 +573,34 @@ class _WalkingCatState extends State<WalkingCat> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _x = widget.startX;
-    _y = widget.startY;
-    _facingRight = widget.facingRight;
+  // Chaque catégorie a sa propre forme de queue et sa propre vitesse de
+  // balancement, pour que les 4 chats ne soient ni identiques ni synchronisés.
+  String get _tailStyle {
+    switch (widget.bankType) {
+      case "chiffres":
+        return "hooked";
+      case "expressions":
+        return "curled";
+      case "verbes":
+        return "stubby";
+      case "mots":
+      default:
+        return "classic";
+    }
+  }
+
+  Duration get _cycleDuration {
+    switch (widget.bankType) {
+      case "chiffres":
+        return const Duration(milliseconds: 520);
+      case "expressions":
+        return const Duration(milliseconds: 380);
+      case "verbes":
+        return const Duration(milliseconds: 600);
+      case "mots":
+      default:
+        return const Duration(milliseconds: 450);
+    }
   }
 
   @override
@@ -571,9 +614,6 @@ class _WalkingCatState extends State<WalkingCat> {
     final chosen = words[_rng.nextInt(words.length)];
     setState(() {
       _bubbleWord = chosen;
-      if (_growth < _maxGrowth) {
-        _growth = (_growth + _growthStep).clamp(1.0, _maxGrowth);
-      }
     });
     final locale = languageLocales[widget.language] ?? "en-US";
     await _catTts.setLanguage(locale);
@@ -587,135 +627,120 @@ class _WalkingCatState extends State<WalkingCat> {
     });
   }
 
-  void _onLongPressStart(LongPressStartDetails details) {
-    _dragStartX = _x;
-    _dragStartY = _y;
-  }
-
-  void _onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
-    final size = MediaQuery.of(context).size;
-    setState(() {
-      if (details.offsetFromOrigin.dx.abs() > 2) {
-        _facingRight = details.offsetFromOrigin.dx > 0;
-      }
-      _x = (_dragStartX + details.offsetFromOrigin.dx)
-          .clamp(0, size.width - 60);
-      _y = (_dragStartY + details.offsetFromOrigin.dy)
-          .clamp(0, size.height - 100);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      duration: Duration.zero,
-      left: _x,
-      top: _y,
-      child: GestureDetector(
-        onTap: _onTap,
-        onLongPressStart: _onLongPressStart,
-        onLongPressMoveUpdate: _onLongPressMoveUpdate,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.topCenter,
-          children: [
-            if (_bubbleWord != null)
-              Positioned(
-                top: -70,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.black87, width: 1),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _bubbleWord!["word"]!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      Text(
-                        _bubbleWord!["fr"]!,
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.rotationY(_facingRight ? 0 : 3.1416),
-              child: Transform.scale(
-                scale: _growth,
-                child: CatSprite(
-                  patchColor: _patchColor,
-                ),
-              ),
-            ),
+    return GestureDetector(
+      onTap: _onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          if (_bubbleWord != null)
             Positioned(
-              top: 66,
+              top: -70,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.black87, width: 1),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                  ],
                 ),
-                child: Text(
-                  _label,
-                  style: const TextStyle(fontSize: 10, color: Colors.black54),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _bubbleWord!["word"]!,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    Text(
+                      _bubbleWord!["fr"]!,
+                      style: const TextStyle(fontSize: 11, color: Colors.black54),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.rotationY(widget.facingRight ? 0 : 3.1416),
+            child: CatSprite(
+              patchColor: _patchColor,
+              size: widget.catSize,
+              tailStyle: _tailStyle,
+              cycleDuration: _cycleDuration,
+            ),
+          ),
+          Positioned(
+            top: widget.catSize.height,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class WalkingCatsBackground extends StatelessWidget {
+class CatsHero extends StatelessWidget {
   final String language;
-  const WalkingCatsBackground({super.key, required this.language});
+  const CatsHero({super.key, required this.language});
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return Stack(
-      children: [
-        WalkingCat(
-          startX: size.width * 0.25,
-          startY: size.height * 0.55,
-          language: language,
-          bankType: "mots",
-          facingRight: true,
+    const catSize = Size(90, 100);
+    // Grille 2x2 figée : chaque paire se fait face (le chat de gauche
+    // regarde vers la droite, celui de droite regarde vers la gauche).
+    Widget cell(String bankType, bool facingRight) {
+      return Expanded(
+        child: Center(
+          child: WalkingCat(
+            language: language,
+            bankType: bankType,
+            facingRight: facingRight,
+            catSize: catSize,
+          ),
         ),
-        WalkingCat(
-          startX: size.width * 0.65,
-          startY: size.height * 0.55,
-          language: language,
-          bankType: "expressions",
-          facingRight: false,
-        ),
-        WalkingCat(
-          startX: size.width * 0.25,
-          startY: size.height * 0.75,
-          language: language,
-          bankType: "chiffres",
-          facingRight: true,
-        ),
-        WalkingCat(
-          startX: size.width * 0.65,
-          startY: size.height * 0.75,
-          language: language,
-          bankType: "verbes",
-          facingRight: false,
-        ),
-      ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                cell("mots", false),
+                cell("chiffres", true),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                cell("expressions", false),
+                cell("verbes", true),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -730,11 +755,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
-  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _textController = TextEditingController();
   bool _isListening = false;
-  bool _isThinking = false;
-  String _userText = "";
-  final List<ChatMessage> _messages = [];
+  bool _isTranslating = false;
+  String? _translation;
+  String? _errorText;
 
   final List<String> _languages = [
     "Anglais",
@@ -743,24 +768,20 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedLanguage = "Anglais";
   Character _selectedCharacter = characters[0];
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
   }
 
-  Future<void> _askGemini(String userMessage) async {
+  Future<void> _translate(String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
     setState(() {
-      _isThinking = true;
-      _messages.add(ChatMessage(userMessage, true));
+      _isTranslating = true;
+      _translation = null;
+      _errorText = null;
     });
-    _scrollToBottom();
     try {
       final url = Uri.parse(
         'https://gemini-proxyhardydavid-81workersdev.hardydavid-81.workers.dev',
@@ -776,14 +797,8 @@ class _HomeScreenState extends State<HomeScreen> {
               "parts": [
                 {
                   "text":
-                      "Tu es un partenaire de conversation pour apprendre les langues. " +
-                          _selectedCharacter.personality +
-                          " L'utilisateur pratique le " +
-                          _selectedLanguage +
-                          ". Reponds TOUJOURS en " +
-                          _selectedLanguage +
-                          " uniquement, meme si l'utilisateur ecrit dans une autre langue, en restant dans ton personnage, de facon courte, deux ou trois phrases maximum. Message de l'utilisateur : " +
-                          userMessage
+                      "Traduis le texte suivant entre le francais et l'anglais : si le texte est en francais, traduis-le en anglais ; si le texte est en anglais, traduis-le en francais. Reponds UNIQUEMENT avec la traduction, sans aucune explication, sans guillemets. Texte : " +
+                          trimmed
                 }
               ]
             }
@@ -792,32 +807,27 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final reply = data['candidates'][0]['content']['parts'][0]['text'];
+        final translated =
+            (data['candidates'][0]['content']['parts'][0]['text'] as String)
+                .trim();
         setState(() {
-          _messages.add(ChatMessage(reply, false));
-          _isThinking = false;
+          _translation = translated;
+          _isTranslating = false;
         });
-        _scrollToBottom();
         await _tts.setLanguage(_selectedCharacter.ttsLocale);
-        await _tts.speak(reply);
+        await _tts.speak(translated);
       } else {
         setState(() {
-          _messages.add(ChatMessage(
-              "Erreur API code " +
-                  response.statusCode.toString() +
-                  " : " +
-                  response.body,
-              false));
-          _isThinking = false;
+          _errorText =
+              "Erreur API code " + response.statusCode.toString();
+          _isTranslating = false;
         });
-        _scrollToBottom();
       }
     } catch (e) {
       setState(() {
-        _messages.add(ChatMessage("Erreur : " + e.toString(), false));
-        _isThinking = false;
+        _errorText = "Erreur : " + e.toString();
+        _isTranslating = false;
       });
-      _scrollToBottom();
     }
   }
 
@@ -827,12 +837,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (available) {
         setState(() {
           _isListening = true;
-          _userText = "";
         });
         _speech.listen(
           onResult: (result) {
             setState(() {
-              _userText = result.recognizedWords;
+              _textController.text = result.recognizedWords;
             });
           },
         );
@@ -842,34 +851,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _isListening = false;
       });
       await _speech.stop();
-      if (_userText.isNotEmpty) {
-        _askGemini(_userText);
+      if (_textController.text.trim().isNotEmpty) {
+        _translate(_textController.text);
       }
     }
-  }
-
-  Widget _buildBubble(ChatMessage msg) {
-    return Align(
-      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: msg.isUser ? Colors.blue : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          msg.text,
-          style: TextStyle(
-            color: msg.isUser ? Colors.white : Colors.black87,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -931,60 +916,103 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              Expanded(
-                child: _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          "Vous pratiquez : " +
-                              _selectedLanguage +
-                              " avec " +
-                              _selectedCharacter.emoji +
-                              " " +
-                              _selectedCharacter.name +
-                              "\nAppuyez sur le micro et parlez",
-                          style: const TextStyle(fontSize: 18, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          return _buildBubble(_messages[index]);
-                        },
-                      ),
-              ),
-              if (_isThinking)
-                const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: CircularProgressIndicator(),
-                ),
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: GestureDetector(
-                  onTap: _listen,
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: _isListening ? Colors.red : Colors.blue,
-                    child: const Icon(
-                      Icons.mic,
-                      size: 44,
-                      color: Colors.white,
-                    ),
+          // Section héro : les 4 chats sont l'identité visuelle de l'app
+          Container(
+            width: double.infinity,
+            height: 300,
+            color: Colors.indigo.shade50,
+            child: CatsHero(language: _selectedLanguage),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _textController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: "Tapez ou parlez, en français ou en anglais...",
+                    border: OutlineInputBorder(),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _listen,
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: _isListening ? Colors.red : Colors.indigo,
+                        child: const Icon(Icons.mic, color: Colors.white, size: 26),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _translate(_textController.text),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text("Traduire"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          Positioned.fill(child: WalkingCatsBackground(language: _selectedLanguage)),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_isTranslating)
+                    const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  if (_errorText != null)
+                    Text(_errorText!, style: const TextStyle(color: Colors.red)),
+                  if (_translation != null)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.indigo.shade100),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _translation!,
+                              style: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.volume_up, color: Colors.indigo),
+                            onPressed: () async {
+                              await _tts.setLanguage(_selectedCharacter.ttsLocale);
+                              await _tts.speak(_translation!);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
+
 
