@@ -558,12 +558,14 @@ class WalkingCat extends StatefulWidget {
   final String bankType;
   final bool facingRight;
   final Size catSize;
+  final bool reversedMode;
   const WalkingCat({
     super.key,
     required this.language,
     required this.bankType,
     this.facingRight = true,
     this.catSize = const Size(60, 66),
+    this.reversedMode = false,
   });
 
   @override
@@ -573,6 +575,10 @@ class WalkingCat extends StatefulWidget {
 class _WalkingCatState extends State<WalkingCat> {
   final FlutterTts _catTts = FlutterTts();
   Map<String, String>? _bubbleWord;
+  final List<Map<String, String>> _history = [];
+  int _historyIndex = -1;
+  bool _revealed = false;
+  int _bubbleGen = 0;
 
   Map<String, List<Map<String, String>>> get _bank {
     switch (widget.bankType) {
@@ -652,17 +658,9 @@ class _WalkingCatState extends State<WalkingCat> {
     super.dispose();
   }
 
-  void _onTap() async {
-    final words = _bank[widget.language] ?? _bank["Anglais"]!;
-    final chosen = words[_rng.nextInt(words.length)];
-    setState(() {
-      _bubbleWord = chosen;
-    });
-    final locale = languageLocales[widget.language] ?? "en-US";
-    await _catTts.setLanguage(locale);
-    await _catTts.speak(chosen["word"]!);
+  void _scheduleAutoHide(int gen) {
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
+      if (mounted && gen == _bubbleGen) {
         setState(() {
           _bubbleWord = null;
         });
@@ -670,32 +668,101 @@ class _WalkingCatState extends State<WalkingCat> {
     });
   }
 
+  void _onTap() async {
+    final words = _bank[widget.language] ?? _bank["Anglais"]!;
+    final chosen = words[_rng.nextInt(words.length)];
+    final myGen = ++_bubbleGen;
+    setState(() {
+      _history.add(chosen);
+      _historyIndex = _history.length - 1;
+      _bubbleWord = chosen;
+      _revealed = !widget.reversedMode;
+    });
+    if (!widget.reversedMode) {
+      final locale = languageLocales[widget.language] ?? "en-US";
+      await _catTts.setLanguage(locale);
+      await _catTts.speak(chosen["word"]!);
+      _scheduleAutoHide(myGen);
+    }
+    // En mode inversé, on attend que l'utilisateur appuie sur "Deviner"
+    // avant de révéler le mot et de programmer la disparition de la bulle.
+  }
+
+  void _onReveal() async {
+    final myGen = _bubbleGen;
+    setState(() {
+      _revealed = true;
+    });
+    final locale = languageLocales[widget.language] ?? "en-US";
+    await _catTts.setLanguage(locale);
+    await _catTts.speak(_bubbleWord!["word"]!);
+    _scheduleAutoHide(myGen);
+  }
+
+  void _onBack() {
+    if (_historyIndex <= 0) return;
+    final myGen = ++_bubbleGen;
+    setState(() {
+      _historyIndex--;
+      _bubbleWord = _history[_historyIndex];
+      _revealed = true;
+    });
+    _scheduleAutoHide(myGen);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.topCenter,
-        children: [
-          if (_bubbleWord != null)
-            Positioned(
-              top: widget.catSize.height * 0.38,
-              left: widget.facingRight ? -(widget.catSize.width * 0.62) : null,
-              right: widget.facingRight ? null : -(widget.catSize.width * 0.62),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.black87, width: 1),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        if (_bubbleWord != null)
+          Positioned(
+            top: widget.catSize.height * 0.38,
+            left: widget.facingRight ? -(widget.catSize.width * 0.62) : null,
+            right: widget.facingRight ? null : -(widget.catSize.width * 0.62),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.black87, width: 1),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_historyIndex > 0)
+                    GestureDetector(
+                      onTap: _onBack,
+                      child: const Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(Icons.undo, size: 16, color: Colors.black45),
+                      ),
+                    ),
+                  if (widget.reversedMode && !_revealed) ...[
+                    Text(
+                      _bubbleWord!["fr"]!,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    GestureDetector(
+                      onTap: _onReveal,
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          "Deviner ?",
+                          style: TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
                     Text(
                       _bubbleWord!["word"]!,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -705,10 +772,13 @@ class _WalkingCatState extends State<WalkingCat> {
                       style: const TextStyle(fontSize: 11, color: Colors.black54),
                     ),
                   ],
-                ),
+                ],
               ),
             ),
-          Transform(
+          ),
+        GestureDetector(
+          onTap: _onTap,
+          child: Transform(
             alignment: Alignment.center,
             transform: Matrix4.rotationY(widget.facingRight ? 0 : 3.1416),
             child: CatSprite(
@@ -718,11 +788,12 @@ class _WalkingCatState extends State<WalkingCat> {
               cycleDuration: _cycleDuration,
             ),
           ),
-          Positioned(
-            top: widget.catSize.height,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
+        ),
+        Positioned(
+          top: widget.catSize.height,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -737,14 +808,14 @@ class _WalkingCatState extends State<WalkingCat> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
 class CatsHero extends StatelessWidget {
   final String language;
-  const CatsHero({super.key, required this.language});
+  final bool reversedMode;
+  const CatsHero({super.key, required this.language, this.reversedMode = false});
 
   @override
   Widget build(BuildContext context) {
@@ -759,6 +830,7 @@ class CatsHero extends StatelessWidget {
             bankType: bankType,
             facingRight: facingRight,
             catSize: catSize,
+            reversedMode: reversedMode,
           ),
         ),
       );
@@ -811,6 +883,7 @@ class _HomeScreenState extends State<HomeScreen> {
     "Français",
   ];
   String _selectedLanguage = "Anglais";
+  bool _reversedMode = false;
   Character _selectedCharacter = characters[0];
 
   @override
@@ -982,12 +1055,33 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Mode inversé (deviner)",
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                Switch(
+                  value: _reversedMode,
+                  activeColor: Colors.indigo,
+                  onChanged: (v) {
+                    setState(() {
+                      _reversedMode = v;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
           // Section héro : les 4 chats sont l'identité visuelle de l'app
           Container(
             width: double.infinity,
             height: 300,
             color: Colors.indigo.shade50,
-            child: CatsHero(language: _selectedLanguage),
+            child: CatsHero(language: _selectedLanguage, reversedMode: _reversedMode),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
