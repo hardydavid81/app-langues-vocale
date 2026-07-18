@@ -113,7 +113,11 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         setState(() {
           _messages.add(ChatMessage(
-              "Erreur API code " + response.statusCode.toString(), false));
+              "Erreur API code " +
+                  response.statusCode.toString() +
+                  " : " +
+                  response.body,
+              false));
           _isThinking = false;
         });
         _scrollToBottom();
