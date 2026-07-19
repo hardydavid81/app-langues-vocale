@@ -1,9 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:math' as math;
-import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:http/http.dart' as http;
-import 'package:flutter_tts/flutter_tts.dart';
-import 'dart:convert';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,1315 +12,335 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const HomeScreen(),
+      title: 'Lettres Tombantes',
+      theme: ThemeData(primarySwatch: Colors.indigo, useMaterial3: true),
+      home: const GameScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class Character {
-  final String name;
-  final String emoji;
-  final String personality;
-  final String ttsLocale;
-  final double pitch;
-  final double rate;
-  const Character(
-    this.name,
-    this.emoji,
-    this.personality,
-    this.ttsLocale, {
-    this.pitch = 1.0,
-    this.rate = 0.5,
-  });
-}
+// Distribution des lettres pondérée façon fréquence anglaise
+// (les lettres courantes reviennent plus souvent).
+const String _letterPool =
+    "EEEEEEEEEEEEAAAAAAAAAARRRRRRRRRIIIIIIIIIOOOOOOOOOTTTTTTTTTNNNNNNNSSSSSSSLLLLLLLCCCCCUUUUUDDDDDPPPPPMMMMMHHHHHGGGGBBBFFFYYYWWWKKVVXXZZJJQQ";
 
-const List<Character> characters = [
-  Character(
-    "Pierre Croissant",
-    "🇫🇷",
-    "Tu es Pierre Croissant, un Français qui apprend la langue cible avec un accent français très prononcé. Tu soupires souvent, tu glisses des mots français par-ci par-là même en parlant la langue cible.",
-    "fr-FR",
-    pitch: 1.15,
-    rate: 0.45,
-  ),
-  Character(
-    "Tex Baguette",
-    "🤠",
-    "Tu es Tex Baguette, un cowboy texan hyper enthousiaste qui apprend la langue cible avec un accent américain très prononcé. Tu dis 'yeehaw', tu compares tout à des chevaux ou du barbecue.",
-    "en-US",
-    pitch: 1.4,
-    rate: 0.6,
-  ),
-  Character(
-    "Marco Mozzarella",
-    "🇮🇹",
-    "Tu es Marco Mozzarella, un Italien passionné et dramatique qui apprend la langue cible avec un accent italien très prononcé. Tu t'exclames souvent 'Mamma mia!', et tu adores la nourriture.",
-    "it-IT",
-    pitch: 1.45,
-    rate: 0.55,
-  ),
-  Character(
-    "Kenji Konbanjour",
-    "🇯🇵",
-    "Tu es Kenji Konbanjour, energique et suraigu, style personnage d'anime, qui apprend la langue cible avec un accent japonais très prononcé. Tu es toujours super enthousiaste, tu utilises plein de kawaii et de superlatifs.",
-    "ja-JP",
-    pitch: 1.7,
-    rate: 0.6,
-  ),
-  Character(
-    "Hamish Ochaye",
-    "🏴",
-    "Tu es Hamish Ochaye, un Ecossais bourru des Highlands qui apprend la langue cible avec un accent écossais très prononcé. Tu es direct, un peu grognon mais chaleureux au fond, et tu mentionnes souvent le mauvais temps ou le whisky.",
-    "en-GB",
-    pitch: 1.1,
-    rate: 0.48,
-  ),
-];
-
-// Uniquement 2 langues pour cette version de l'app : Anglais et Français.
-// Pour une autre paire de langues, il suffit de dupliquer ce fichier et de
-// changer languageLocales, _languages, et le contenu des banques ci-dessous.
-final Map<String, String> languageLocales = {
-  "Anglais": "en-US",
-  "Français": "fr-FR",
+// Liste de mots anglais valides (3 à 6 lettres) pour la détection.
+final Set<String> _wordList = {
+  "CAT","DOG","SUN","RUN","FUN","BAT","RAT","MAT","HAT","SIT","BIG","PIG","WIN",
+  "TEN","TEA","SEA","EAT","ATE","TAP","TOP","POT","HOT","HOP","HIP","LIP","LID",
+  "KID","RED","BED","LEG","LOG","FOG","JOG","JOB","JAM","HAM","HAS","HAD","BAD",
+  "BAG","TAG","TAN","MAN","CAN","VAN","FAN","PAN","PEN","HEN","DEN","YES","YET",
+  "NET","NEW","NOW","NOT","GOT","GET","LET","SET","BET","MET","WET","VET","ICE",
+  "ACE","AGE","ARM","ART","EAR","EYE","OIL","OWL","OWN","OUT","OFF","ODD","ONE",
+  "TWO","SIX","SKY","SAD","SAW","SEE","SAY","SHE","HIM","HIS","HER","WHO","WHY",
+  "HOW","LOW","LOT","LEG","LAP","LAW","LAY","LIE","LIT","JOY","JAW","KEY","ARE",
+  "AND","ANY","ASK","BUY","BUS","BOX","BOY","BOW","BAR","BAY","CAR","CAP","COW",
+  "CUP","CUT","CRY","DAY","DIE","DIG","DIM","DRY","DUE","EGG","END","ERA","FAR",
+  "FAT","FEW","FIT","FIX","FLY","FOR","FUR","GAP","GAS","GYM","ICY","INK","JOB",
+  "TREE","CARE","RACE","FACE","LACE","LAKE","CAKE","MAKE","TAKE","WAKE","LOVE",
+  "MOVE","GAME","NAME","SAME","TIME","LIME","LINE","FINE","WINE","MINE","NINE",
+  "PINE","WORD","WORK","WORM","FORM","FARM","WARM","RAIN","MAIN","PAIN","GAIN",
+  "BOOK","LOOK","COOK","HOOK","TOOK","MOON","SOON","POOL","COOL","TOOL","ROOM",
+  "ZOOM","FOOD","GOOD","WOOD","HOOD","MOOD","STAR","CARD","YARD","HARD","PARK",
+  "DARK","MARK","PART","CART","BALL","CALL","FALL","HALL","TALL","WALL","WELL",
+  "TELL","BELL","SELL","SHELL","SMELL","GOLD","COLD","HOLD","SOLD","BOLD","FOLD",
+  "MILK","SILK","FISH","WISH","DISH","BUSH","RUSH","PUSH","GOAT","BOAT","COAT",
+  "ROAD","LOAD","TOAD","HEAD","READ","BEAD","LEAD","DEAL","MEAL","REAL","SEAL",
+  "PLAY","STAY","GRAY","TRAY","SPRAY","AWAY","BABY","LADY","BODY","COPY","EASY",
+  "BUSY","CITY","DUTY","FIFTY","JELLY","BERRY","MERRY","SORRY","HAPPY","MONEY",
+  "HONEY","FUNNY","SUNNY","MUSIC","MAGIC","ROBOT","TIGER","APPLE","EAGLE","TABLE",
+  "CABLE","GARDEN","MARKET","WINDOW","PENCIL","ANIMAL","PICNIC","YELLOW","PURPLE",
+  "ORANGE","SILVER","GOLDEN","WINTER","SUMMER","SPRING","FRIEND","FAMILY","SCHOOL",
+  "CHAIR","TABLE","HOUSE","MOUSE","LIGHT","NIGHT","RIGHT","FIGHT","SIGHT","MIGHT",
+  "WATER","PAPER","EARTH","HEART","PLANT","PLANE","TRAIN","BRAIN","SPACE","PLACE",
+  "GRAPE","STONE","PHONE","SMILE","WHILE","GREEN","QUEEN","STORM","CLOUD","BREAD",
+  "DREAM","CREAM","GREAT","BEACH","TEACH","REACH",
 };
 
-final math.Random _rng = math.Random();
+const int cols = 9;
+const int rows = 15;
 
-// Chaque entrée : "word" = mot dans la langue pratiquée, "fr" = traduction française.
-// Pour la banque "Français", on dérive automatiquement l'inverse de la banque
-// "Anglais" (word=français, fr=anglais) pour éviter de dupliquer les données.
-List<Map<String, String>> _deriveFrench(List<Map<String, String>> englishList) {
-  return englishList.map((e) => {"word": e["fr"]!, "fr": e["word"]!}).toList();
-}
-
-final List<Map<String, String>> _englishWords = [
-  {"word": "Hello", "fr": "Bonjour"},
-  {"word": "Cat", "fr": "Chat"},
-  {"word": "Friend", "fr": "Ami"},
-  {"word": "Happy", "fr": "Heureux"},
-  {"word": "Water", "fr": "Eau"},
-  {"word": "Beautiful", "fr": "Beau"},
-  {"word": "House", "fr": "Maison"},
-  {"word": "Dog", "fr": "Chien"},
-  {"word": "Sun", "fr": "Soleil"},
-  {"word": "Moon", "fr": "Lune"},
-  {"word": "Book", "fr": "Livre"},
-  {"word": "Love", "fr": "Amour"},
-  {"word": "Time", "fr": "Temps"},
-  {"word": "Food", "fr": "Nourriture"},
-  {"word": "Family", "fr": "Famille"},
-  {"word": "Bread", "fr": "Pain"},
-  {"word": "Music", "fr": "Musique"},
-  {"word": "Tree", "fr": "Arbre"},
-  {"word": "Sea", "fr": "Mer"},
-  {"word": "Sky", "fr": "Ciel"},
-  {"word": "Bird", "fr": "Oiseau"},
-  {"word": "Flower", "fr": "Fleur"},
-  {"word": "School", "fr": "École"},
-  {"word": "Work", "fr": "Travail"},
-  {"word": "Night", "fr": "Nuit"},
-  {"word": "Day", "fr": "Jour"},
-  {"word": "Good", "fr": "Bon"},
-  {"word": "Big", "fr": "Grand"},
-  {"word": "Small", "fr": "Petit"},
-  {"word": "Fast", "fr": "Rapide"},
-  {"word": "Slow", "fr": "Lent"},
-  {"word": "Color", "fr": "Couleur"},
-  {"word": "Red", "fr": "Rouge"},
-  {"word": "Blue", "fr": "Bleu"},
-  {"word": "Green", "fr": "Vert"},
-  {"word": "Mother", "fr": "Mère"},
-  {"word": "Father", "fr": "Père"},
-  {"word": "Brother", "fr": "Frère"},
-  {"word": "Sister", "fr": "Sœur"},
-  {"word": "Child", "fr": "Enfant"},
-  {"word": "Head", "fr": "Tête"},
-  {"word": "Hand", "fr": "Main"},
-  {"word": "Eye", "fr": "Œil"},
-  {"word": "Mouth", "fr": "Bouche"},
-  {"word": "Rain", "fr": "Pluie"},
-  {"word": "Wind", "fr": "Vent"},
-  {"word": "Snow", "fr": "Neige"},
-  {"word": "Today", "fr": "Aujourd'hui"},
-  {"word": "Tomorrow", "fr": "Demain"},
-  {"word": "Yesterday", "fr": "Hier"},
-  {"word": "Thanks", "fr": "Merci"},
-  {"word": "Please", "fr": "S'il vous plaît"},
-  {"word": "Yes", "fr": "Oui"},
-  {"word": "No", "fr": "Non"},
-  {"word": "Sorry", "fr": "Désolé"},
-  {"word": "Name", "fr": "Nom"},
-];
-
-final List<Map<String, String>> _englishPhrases = [
-  {"word": "How are you?", "fr": "Comment vas-tu ?"},
-  {"word": "What is your name?", "fr": "Comment tu t'appelles ?"},
-  {"word": "Nice to meet you", "fr": "Enchanté"},
-  {"word": "I don't understand", "fr": "Je ne comprends pas"},
-  {"word": "Can you help me?", "fr": "Peux-tu m'aider ?"},
-  {"word": "Where is the bathroom?", "fr": "Où sont les toilettes ?"},
-  {"word": "How much is it?", "fr": "Combien ça coûte ?"},
-  {"word": "I would like...", "fr": "Je voudrais..."},
-  {"word": "See you later", "fr": "À plus tard"},
-  {"word": "Have a good day", "fr": "Bonne journée"},
-  {"word": "What time is it?", "fr": "Quelle heure est-il ?"},
-  {"word": "I am hungry", "fr": "J'ai faim"},
-  {"word": "I am thirsty", "fr": "J'ai soif"},
-  {"word": "I am tired", "fr": "Je suis fatigué"},
-  {"word": "Where are you from?", "fr": "D'où viens-tu ?"},
-  {"word": "I speak a little", "fr": "Je parle un peu"},
-  {"word": "Can you repeat?", "fr": "Peux-tu répéter ?"},
-  {"word": "Slower please", "fr": "Plus lentement s'il te plaît"},
-  {"word": "It's delicious", "fr": "C'est délicieux"},
-  {"word": "Congratulations", "fr": "Félicitations"},
-  {"word": "All ears", "fr": "Tout ouïe"},
-  {"word": "Cross one's fingers", "fr": "Croiser les doigts"},
-  {"word": "Beat around the bush", "fr": "Tourner autour du pot"},
-  {"word": "A piece of cake", "fr": "Du gâteau (très facile)"},
-  {"word": "Feel under the weather", "fr": "Ne pas se sentir bien"},
-  {"word": "Go round in circles", "fr": "Tourner en rond"},
-  {"word": "Sleep on it", "fr": "La nuit porte conseil"},
-  {"word": "To be broke", "fr": "Être fauché"},
-  {"word": "Know it like the back of one's hand", "fr": "Connaître comme sa poche"},
-  {"word": "Once in a blue moon", "fr": "Tous les 36 du mois"},
-  {"word": "Out of the blue", "fr": "Sans crier gare"},
-  {"word": "The cream of the crop", "fr": "La crème de la crème"},
-  {"word": "An early bird", "fr": "Un lève-tôt"},
-  {"word": "A cock and bull story", "fr": "Une histoire à dormir debout"},
-  {"word": "It's raining cats and dogs", "fr": "Il pleut des cordes"},
-  {"word": "Storm in a teacup", "fr": "Une tempête dans un verre d'eau"},
-  {"word": "Rings a bell", "fr": "Ça me dit quelque chose"},
-  {"word": "We are in deep water", "fr": "On est dans le pétrin"},
-  {"word": "As good as gold", "fr": "Sage comme une image"},
-  {"word": "Spill the beans", "fr": "Vendre la mèche"},
-  {"word": "Get cold feet", "fr": "Avoir le trac"},
-  {"word": "Icing on the cake", "fr": "La cerise sur le gâteau"},
-  {"word": "Work one's fingers to the bone", "fr": "Travailler d'arrache-pied"},
-  {"word": "It's not my cup of tea", "fr": "Ce n'est pas ma tasse de thé"},
-  {"word": "Seize the day", "fr": "Profite du moment présent"},
-  {"word": "Don't judge a book by its cover", "fr": "Ne pas se fier aux apparences"},
-  {"word": "Kill two birds with one stone", "fr": "Faire d'une pierre deux coups"},
-  {"word": "Like father, like son", "fr": "Tel père, tel fils"},
-  {"word": "When pigs fly", "fr": "Quand les poules auront des dents"},
-  {"word": "Tit for tat", "fr": "Œil pour œil, dent pour dent"},
-  {"word": "Better late than never", "fr": "Mieux vaut tard que jamais"},
-  {"word": "The early bird catches the worm", "fr": "Le monde appartient à celui qui se lève tôt"},
-  {"word": "Put the cart before the horse", "fr": "Mettre la charrue avant les bœufs"},
-  {"word": "You can't have your cake and eat it", "fr": "On ne peut pas avoir le beurre et l'argent du beurre"},
-  {"word": "I can't believe it!", "fr": "Je n'en crois pas mes yeux !"},
-  {"word": "Never mind!", "fr": "Ne t'en fais pas !"},
-  {"word": "It's up to you!", "fr": "C'est à toi de décider !"},
-  {"word": "Keep cool!", "fr": "On se calme !"},
-  {"word": "Break a leg!", "fr": "Bonne chance !"},
-  {"word": "So far so good!", "fr": "Jusqu'ici tout va bien !"},
-  {"word": "Pull yourself together!", "fr": "Calme-toi !"},
-  {"word": "Speak of the devil!", "fr": "Quand on parle du loup !"},
-  {"word": "My foot!", "fr": "Mon œil !"},
-];
-
-final List<Map<String, String>> _englishNumbers = [
-  {"word": "One", "fr": "Un"},
-  {"word": "Two", "fr": "Deux"},
-  {"word": "Three", "fr": "Trois"},
-  {"word": "Four", "fr": "Quatre"},
-  {"word": "Five", "fr": "Cinq"},
-  {"word": "Six", "fr": "Six"},
-  {"word": "Seven", "fr": "Sept"},
-  {"word": "Eight", "fr": "Huit"},
-  {"word": "Nine", "fr": "Neuf"},
-  {"word": "Ten", "fr": "Dix"},
-  {"word": "Twenty", "fr": "Vingt"},
-  {"word": "Fifty", "fr": "Cinquante"},
-  {"word": "Hundred", "fr": "Cent"},
-  {"word": "Thousand", "fr": "Mille"},
-];
-
-final List<Map<String, String>> _englishVerbs = [
-  {"word": "To eat", "fr": "Manger"},
-  {"word": "To drink", "fr": "Boire"},
-  {"word": "To sleep", "fr": "Dormir"},
-  {"word": "To walk", "fr": "Marcher"},
-  {"word": "To speak", "fr": "Parler"},
-  {"word": "To see", "fr": "Voir"},
-  {"word": "To come", "fr": "Venir"},
-  {"word": "To go", "fr": "Aller"},
-  {"word": "To read", "fr": "Lire"},
-  {"word": "To write", "fr": "Écrire"},
-  {"word": "To think", "fr": "Penser"},
-  {"word": "To want", "fr": "Vouloir"},
-  {"word": "To need", "fr": "Avoir besoin"},
-  {"word": "To love", "fr": "Aimer"},
-  {"word": "To work", "fr": "Travailler"},
-  {"word": "To play", "fr": "Jouer"},
-  {"word": "To learn", "fr": "Apprendre"},
-  {"word": "To buy", "fr": "Acheter"},
-];
-
-final Map<String, List<Map<String, String>>> wordBank = {
-  "Anglais": _englishWords,
-  "Français": _deriveFrench(_englishWords),
-};
-
-final Map<String, List<Map<String, String>>> phraseBank = {
-  "Anglais": _englishPhrases,
-  "Français": _deriveFrench(_englishPhrases),
-};
-
-final Map<String, List<Map<String, String>>> numberBank = {
-  "Anglais": _englishNumbers,
-  "Français": _deriveFrench(_englishNumbers),
-};
-
-final Map<String, List<Map<String, String>>> verbBank = {
-  "Anglais": _englishVerbs,
-  "Français": _deriveFrench(_englishVerbs),
-};
-
-class CatSprite extends StatefulWidget {
-  final Color patchColor;
-  final Size size;
-  final String tailStyle;
-  final Duration cycleDuration;
-  const CatSprite({
-    super.key,
-    this.patchColor = const Color(0xFF1A1A1A),
-    this.size = const Size(60, 66),
-    this.tailStyle = "classic",
-    this.cycleDuration = const Duration(milliseconds: 400),
-  });
+class GameScreen extends StatefulWidget {
+  const GameScreen({super.key});
 
   @override
-  State<CatSprite> createState() => _CatSpriteState();
+  State<GameScreen> createState() => _GameScreenState();
 }
 
-class _CatSpriteState extends State<CatSprite>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _walkCycle;
+class _GameScreenState extends State<GameScreen> {
+  final math.Random _rng = math.Random();
+  late List<List<String?>> _grid;
+  late String _fallingLetter;
+  int _fallingCol = cols ~/ 2;
+  double _fallingRow = 0;
+  Timer? _timer;
+  int _score = 0;
+  bool _gameOver = false;
+  final Set<String> _clearingHighlight = {};
 
   @override
   void initState() {
     super.initState();
-    _walkCycle = AnimationController(
-      vsync: this,
-      duration: widget.cycleDuration,
-    )..repeat(reverse: true);
+    _startNewGame();
   }
 
-  @override
-  void dispose() {
-    _walkCycle.dispose();
-    super.dispose();
+  void _startNewGame() {
+    _grid = List.generate(rows, (_) => List<String?>.filled(cols, null));
+    _score = 0;
+    _gameOver = false;
+    _spawnLetter();
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 600), (_) => _tick());
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _walkCycle,
-      builder: (context, child) {
-        return CustomPaint(
-          size: widget.size,
-          painter: CatPainter(
-            walkValue: _walkCycle.value,
-            patchColor: widget.patchColor,
-            tailStyle: widget.tailStyle,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class CatPainter extends CustomPainter {
-  final double walkValue;
-  final Color patchColor;
-  final String tailStyle;
-  CatPainter({
-    required this.walkValue,
-    this.patchColor = const Color(0xFF1A1A1A),
-    this.tailStyle = "classic",
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scale = size.width / 100.0;
-    canvas.save();
-    canvas.scale(scale);
-    canvas.translate(0, 20);
-
-    final blackFill = Paint()..color = const Color(0xFF1A1A1A);
-    final blackStroke = Paint()
-      ..color = const Color(0xFF1A1A1A)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final whiteFill = Paint()..color = Colors.white;
-    final pinkFill = Paint()..color = const Color(0xFFFFC2D1);
-    final whiskerPaint = Paint()
-      ..color = const Color(0xFF1A1A1A).withOpacity(0.7)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final patchFill = Paint()..color = patchColor;
-
-    canvas.drawLine(const Offset(-8, 24), const Offset(16, 26), whiskerPaint);
-    canvas.drawLine(const Offset(-8, 30), const Offset(16, 30), whiskerPaint);
-    canvas.drawLine(const Offset(-8, 36), const Offset(16, 33), whiskerPaint);
-    canvas.drawLine(const Offset(54, 26), const Offset(78, 22), whiskerPaint);
-    canvas.drawLine(const Offset(54, 30), const Offset(78, 28), whiskerPaint);
-    canvas.drawLine(const Offset(54, 33), const Offset(78, 35), whiskerPaint);
-
-    // Queue (pivote autour du point d'attache au corps)
-    canvas.save();
-    canvas.translate(62, 66);
-    final tailAngle = (-8 + walkValue * 18) * math.pi / 180;
-    canvas.rotate(tailAngle);
-    canvas.translate(-62, -66);
-    final tailPath = Path()..moveTo(62, 66);
-    switch (tailStyle) {
-      case "hooked": // Chiffres : courte, avec un crochet à l'extrémité
-        tailPath
-          ..quadraticBezierTo(86, 58, 88, 42)
-          ..quadraticBezierTo(78, 28, 90, 20);
-        break;
-      case "curled": // Expressions : s'enroule vers le bas
-        tailPath
-          ..quadraticBezierTo(90, 76, 86, 86)
-          ..quadraticBezierTo(72, 88, 60, 80);
-        break;
-      case "stubby": // Verbes : courte et trapue
-        tailPath
-          ..quadraticBezierTo(78, 62, 79, 50)
-          ..quadraticBezierTo(79, 40, 68, 39);
-        break;
-      case "classic": // Mots : arc classique
-      default:
-        tailPath
-          ..quadraticBezierTo(88, 64, 90, 46)
-          ..quadraticBezierTo(86, 30, 70, 26);
-    }
-    canvas.drawPath(
-      tailPath,
-      Paint()
-        ..color = const Color(0xFF1A1A1A)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 6
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.restore();
-
-    void drawLeg(double x, double yTop, bool sameSide) {
-      final angle = sameSide ? walkValue : 1 - walkValue;
-      final tilt = (angle - 0.5) * 28 * math.pi / 180;
-      canvas.save();
-      canvas.translate(x + 3, yTop);
-      canvas.rotate(tilt);
-      canvas.translate(-(x + 3), -yTop);
-      final rrect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, yTop, 6, 14),
-        const Radius.circular(3),
-      );
-      canvas.drawRRect(rrect, blackFill);
-      canvas.restore();
-    }
-
-    drawLeg(28, 68, true);
-    drawLeg(38, 68, false);
-
-    // Corps
-    final bodyRect = Rect.fromCenter(center: const Offset(45, 62), width: 56, height: 40);
-    canvas.drawOval(bodyRect, whiteFill);
-    canvas.drawOval(bodyRect, blackStroke);
-    canvas.save();
-    canvas.clipPath(Path()..addOval(bodyRect));
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(66, 55), width: 36, height: 44),
-      patchFill,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(35, 70), width: 20, height: 14),
-      Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.55),
-    );
-    canvas.restore();
-
-    drawLeg(52, 76, true);
-    drawLeg(62, 76, false);
-
-    // Tete
-    canvas.drawCircle(const Offset(35, 28), 26, whiteFill);
-    canvas.drawCircle(const Offset(35, 28), 26, blackStroke);
-    canvas.save();
-    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: const Offset(35, 28), radius: 26)));
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(50, 20), width: 32, height: 36),
-      patchFill,
-    );
-    canvas.restore();
-
-    // Oreille gauche
-    final earLeftFill = Path()
-      ..moveTo(13, 10)
-      ..quadraticBezierTo(9, -3, 18, -12)
-      ..quadraticBezierTo(26, -2, 29, 8)
-      ..quadraticBezierTo(21, 4, 13, 10)
-      ..close();
-    canvas.drawPath(earLeftFill, whiteFill);
-    final earLeftStroke = Path()
-      ..moveTo(13, 10)
-      ..quadraticBezierTo(9, -3, 18, -12)
-      ..quadraticBezierTo(26, -2, 29, 8);
-    canvas.drawPath(earLeftStroke, blackStroke);
-
-    // Oreille droite
-    final earRightFill = Path()
-      ..moveTo(39, 6)
-      ..quadraticBezierTo(44, -6, 48, -14)
-      ..quadraticBezierTo(57, -4, 57, 10)
-      ..quadraticBezierTo(48, 4, 39, 6)
-      ..close();
-    canvas.drawPath(earRightFill, whiteFill);
-    final earRightStroke = Path()
-      ..moveTo(39, 6)
-      ..quadraticBezierTo(44, -6, 48, -14)
-      ..quadraticBezierTo(57, -4, 57, 10);
-    canvas.drawPath(earRightStroke, blackStroke);
-
-    // Interieur des oreilles (rose)
-    final innerLeft = Path()
-      ..moveTo(17, 6)
-      ..quadraticBezierTo(16, -2, 20, -6)
-      ..quadraticBezierTo(24, -1, 25, 7)
-      ..quadraticBezierTo(21, 4, 17, 6)
-      ..close();
-    canvas.drawPath(innerLeft, pinkFill);
-    final innerRight = Path()
-      ..moveTo(43, 3)
-      ..quadraticBezierTo(45, -4, 48, -9)
-      ..quadraticBezierTo(53, -3, 53, 5)
-      ..quadraticBezierTo(48, 2, 43, 3)
-      ..close();
-    canvas.drawPath(innerRight, pinkFill);
-
-    // Joues
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(14, 35), width: 10, height: 7),
-      Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.85),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(46, 38), width: 10, height: 7),
-      Paint()..color = const Color(0xFFFFC2D1).withOpacity(0.6),
-    );
-
-    // Yeux
-    canvas.drawCircle(const Offset(22, 26), 5.5, blackFill);
-    canvas.drawCircle(const Offset(38, 26), 5.5, blackFill);
-    canvas.drawCircle(const Offset(20.5, 24), 1.6, whiteFill);
-    canvas.drawCircle(const Offset(36.5, 24), 1.6, whiteFill);
-    final smallHighlight = Paint()..color = Colors.white.withOpacity(0.8);
-    canvas.drawCircle(const Offset(24, 28), 0.9, smallHighlight);
-    canvas.drawCircle(const Offset(40, 28), 0.9, smallHighlight);
-
-    // Nez (triangle)
-    final nosePath = Path()
-      ..moveTo(26.5, 34)
-      ..lineTo(33, 34)
-      ..lineTo(29.75, 38.5)
-      ..close();
-    canvas.drawPath(nosePath, Paint()..color = const Color(0xFFFF8FAB));
-    canvas.drawPath(
-      nosePath,
-      Paint()
-        ..color = const Color(0xFF1A1A1A)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // Bouche
-    final mouthPaint = Paint()
-      ..color = const Color(0xFF1A1A1A)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(
-      Path()
-        ..moveTo(29.75, 38.5)
-        ..quadraticBezierTo(27.5, 42, 23, 40),
-      mouthPaint,
-    );
-    canvas.drawPath(
-      Path()
-        ..moveTo(29.75, 38.5)
-        ..quadraticBezierTo(32, 42, 36.5, 40),
-      mouthPaint,
-    );
-
-    // Moustaches pres du museau
-    canvas.drawLine(const Offset(20, 34), const Offset(2, 32), whiskerPaint);
-    canvas.drawLine(const Offset(20, 36), const Offset(2, 38), whiskerPaint);
-    canvas.drawLine(const Offset(40, 34), const Offset(58, 32), whiskerPaint);
-    canvas.drawLine(const Offset(40, 36), const Offset(58, 38), whiskerPaint);
-
-    canvas.restore();
+  String _randomLetter() {
+    return _letterPool[_rng.nextInt(_letterPool.length)];
   }
 
-  @override
-  bool shouldRepaint(covariant CatPainter oldDelegate) => oldDelegate.walkValue != walkValue;
-}
-
-class WalkingCat extends StatefulWidget {
-  final String language;
-  final String bankType;
-  final bool facingRight;
-  final Size catSize;
-  final int resetSignal;
-  const WalkingCat({
-    super.key,
-    required this.language,
-    required this.bankType,
-    this.facingRight = true,
-    this.catSize = const Size(60, 66),
-    this.resetSignal = 0,
-  });
-
-  @override
-  State<WalkingCat> createState() => _WalkingCatState();
-}
-
-class _WalkingCatState extends State<WalkingCat> {
-  final FlutterTts _catTts = FlutterTts();
-  Map<String, String>? _bubbleWord;
-  bool _revealed = false;
-  int _bubbleGen = 0;
-
-  Map<String, List<Map<String, String>>> get _bank {
-    switch (widget.bankType) {
-      case "expressions":
-        return phraseBank;
-      case "chiffres":
-        return numberBank;
-      case "verbes":
-        return verbBank;
-      case "mots":
-      default:
-        return wordBank;
-    }
-  }
-
-  Color get _patchColor {
-    switch (widget.bankType) {
-      case "expressions":
-        return const Color(0xFFFFC107);
-      case "chiffres":
-        return const Color(0xFFE53935);
-      case "verbes":
-        return const Color(0xFF1E88E5);
-      case "mots":
-      default:
-        return const Color(0xFF1A1A1A);
-    }
-  }
-
-  String get _label {
-    switch (widget.bankType) {
-      case "expressions":
-        return "Expressions";
-      case "chiffres":
-        return "Chiffres";
-      case "verbes":
-        return "Verbes";
-      case "mots":
-      default:
-        return "Mots";
-    }
-  }
-
-  // Chaque catégorie a sa propre forme de queue et sa propre vitesse de
-  // balancement, pour que les 4 chats ne soient ni identiques ni synchronisés.
-  String get _tailStyle {
-    switch (widget.bankType) {
-      case "chiffres":
-        return "hooked";
-      case "expressions":
-        return "curled";
-      case "verbes":
-        return "stubby";
-      case "mots":
-      default:
-        return "classic";
-    }
-  }
-
-  Duration get _cycleDuration {
-    switch (widget.bankType) {
-      case "chiffres":
-        return const Duration(milliseconds: 520);
-      case "expressions":
-        return const Duration(milliseconds: 380);
-      case "verbes":
-        return const Duration(milliseconds: 600);
-      case "mots":
-      default:
-        return const Duration(milliseconds: 450);
-    }
-  }
-
-  @override
-  void dispose() {
-    _catTts.stop();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant WalkingCat oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.resetSignal != oldWidget.resetSignal) {
-      _bubbleGen++;
+  void _spawnLetter() {
+    _fallingLetter = _randomLetter();
+    _fallingCol = cols ~/ 2;
+    _fallingRow = 0;
+    if (_grid[0][_fallingCol] != null) {
       setState(() {
-        _bubbleWord = null;
+        _gameOver = true;
       });
+      _timer?.cancel();
     }
   }
 
-  void _scheduleAutoHide(int gen) {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && gen == _bubbleGen) {
-        setState(() {
-          _bubbleWord = null;
-        });
-      }
-    });
-  }
-
-  void _onTap() async {
-    final words = _bank[widget.language] ?? _bank["Anglais"]!;
-    final chosen = words[_rng.nextInt(words.length)];
-    final myGen = ++_bubbleGen;
-    setState(() {
-      _bubbleWord = chosen;
-      _revealed = true;
-    });
-    final locale = languageLocales[widget.language] ?? "en-US";
-    await _catTts.setLanguage(locale);
-    await _catTts.speak(chosen["word"]!);
-    _scheduleAutoHide(myGen);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.topCenter,
-      children: [
-        GestureDetector(
-          onTap: _onTap,
-          child: Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.rotationY(widget.facingRight ? 0 : 3.1416),
-            child: CatSprite(
-              patchColor: _patchColor,
-              size: widget.catSize,
-              tailStyle: _tailStyle,
-              cycleDuration: _cycleDuration,
-            ),
-          ),
-        ),
-        Positioned(
-          top: widget.catSize.height,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ),
-        if (_bubbleWord != null)
-          Positioned(
-            top: widget.catSize.height * 0.38,
-            left: widget.facingRight ? -(widget.catSize.width * 0.62) : null,
-            right: widget.facingRight ? null : -(widget.catSize.width * 0.62),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.black87, width: 1),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _bubbleWord!["word"]!,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              Text(
-                                _bubbleWord!["fr"]!,
-                                style: const TextStyle(fontSize: 11, color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class CatsHero extends StatelessWidget {
-  final String language;
-  final int resetSignal;
-  final VoidCallback onReset;
-  const CatsHero({
-    super.key,
-    required this.language,
-    this.resetSignal = 0,
-    required this.onReset,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const catSize = Size(90, 100);
-    // Grille 2x2 figée : chaque paire se fait face (le chat de gauche
-    // regarde vers la droite, celui de droite regarde vers la gauche).
-    Widget cell(String bankType, bool facingRight) {
-      return Expanded(
-        child: Center(
-          child: WalkingCat(
-            language: language,
-            bankType: bankType,
-            facingRight: facingRight,
-            catSize: catSize,
-            resetSignal: resetSignal,
-          ),
-        ),
-      );
-    }
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    cell("mots", false),
-                    cell("chiffres", true),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    cell("expressions", false),
-                    cell("verbes", true),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: onReset,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.indigo, width: 2),
-              boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
-              ],
-            ),
-            child: const Icon(Icons.refresh, color: Colors.indigo, size: 24),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final stt.SpeechToText _speech = stt.SpeechToText();
-  final FlutterTts _tts = FlutterTts();
-  final TextEditingController _textController = TextEditingController();
-  bool _isListening = false;
-  bool _isTranslating = false;
-  String? _translation;
-  String? _errorText;
-  List<String>? _synonyms;
-  final List<Map<String, String>> _translationHistory = [];
-  bool _loadingSynonyms = false;
-
-  String _selectedLanguage = "Anglais";
-  int _catsResetSignal = 0;
-  Character _selectedCharacter = characters[0];
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _translate(String text) async {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
-    setState(() {
-      _isTranslating = true;
-      _translation = null;
-      _errorText = null;
-      _synonyms = null;
-    });
-    try {
-      final url = Uri.parse(
-        'https://gemini-proxyhardydavid-81workersdev.hardydavid-81.workers.dev',
-      );
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {
-                  "text":
-                      "Traduis integralement le texte suivant entre le francais et l'anglais : si le texte est en francais, traduis-le en anglais ; si le texte est en anglais, traduis-le en francais. Ne raccourcis jamais la phrase, traduis-la en entier du debut a la fin. Reponds UNIQUEMENT sous la forme suivante, sans rien d'autre : <code>|<traduction> où <code> est 'en' si la traduction est en anglais, ou 'fr' si elle est en francais, et <traduction> est la traduction complete sans guillemets. Texte : " +
-                          trimmed
-                }
-              ]
-            }
-          ],
-          "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 256
-          }
-        }),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final candidates = data['candidates'] as List?;
-        String translated = "";
-        if (candidates != null && candidates.isNotEmpty) {
-          final parts = candidates[0]['content']?['parts'] as List?;
-          if (parts != null) {
-            translated = parts
-                .map((p) => (p['text'] ?? "").toString())
-                .join()
-                .trim();
-          }
-        }
-        if (translated.isEmpty) {
-          setState(() {
-            _errorText = "Traduction vide, réessaie.";
-            _isTranslating = false;
-          });
-          return;
-        }
-        String outputLocale = languageLocales["Anglais"]!;
-        final sepIndex = translated.indexOf('|');
-        if (sepIndex > 0 && sepIndex <= 3) {
-          final code = translated.substring(0, sepIndex).trim().toLowerCase();
-          translated = translated.substring(sepIndex + 1).trim();
-          if (code.startsWith('fr')) {
-            outputLocale = languageLocales["Français"]!;
-          } else if (code.startsWith('en')) {
-            outputLocale = languageLocales["Anglais"]!;
-          }
-        }
-        setState(() {
-          _translation = translated;
-          _isTranslating = false;
-          _translationHistory.insert(0, {"input": trimmed, "output": translated});
-          if (_translationHistory.length > 20) {
-            _translationHistory.removeLast();
-          }
-        });
-        await _tts.setLanguage(outputLocale);
-        await _tts.setPitch(_selectedCharacter.pitch);
-        await _tts.setSpeechRate(_selectedCharacter.rate);
-        await _tts.speak(translated);
-      } else {
-        setState(() {
-          if (response.statusCode == 429) {
-            _errorText =
-                "Trop de demandes de traduction d'un coup. Attends une minute et réessaie.";
-          } else {
-            _errorText =
-                "Erreur API code " + response.statusCode.toString();
-          }
-          _isTranslating = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorText = "Erreur : " + e.toString();
-        _isTranslating = false;
-      });
-    }
-  }
-
-  Future<void> _fetchSynonyms() async {
-    if (_translation == null || _translation!.trim().isEmpty) return;
-    setState(() {
-      _loadingSynonyms = true;
-      _synonyms = null;
-    });
-    try {
-      final url = Uri.parse(
-        'https://gemini-proxyhardydavid-81workersdev.hardydavid-81.workers.dev',
-      );
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {
-                  "text":
-                      "Donne 4 synonymes courants du mot ou de l'expression suivante, dans la meme langue qu'elle est ecrite. Reponds UNIQUEMENT avec les synonymes separes par des virgules, sans numerotation, sans explication. Texte : " +
-                          _translation!
-                }
-              ]
-            }
-          ],
-          "generationConfig": {"temperature": 0.4, "maxOutputTokens": 128}
-        }),
-      );
-      String text = "";
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final candidates = data['candidates'] as List?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final parts = candidates[0]['content']?['parts'] as List?;
-          if (parts != null) {
-            text = parts.map((p) => (p['text'] ?? "").toString()).join().trim();
-          }
-        }
-      }
-      final syns = text
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      setState(() {
-        _synonyms = syns;
-        _loadingSynonyms = false;
-      });
-    } catch (e) {
-      setState(() {
-        _synonyms = [];
-        _loadingSynonyms = false;
-      });
-    }
-  }
-
-  void _listen() async {
-    if (!_isListening) {
-      bool available = await _speech.initialize();
-      if (available) {
-        setState(() {
-          _isListening = true;
-        });
-        _speech.listen(
-          onResult: (result) {
-            setState(() {
-              _textController.text = result.recognizedWords;
-            });
-          },
-        );
-      }
+  void _tick() {
+    if (_gameOver) return;
+    final nextRow = _fallingRow.floor() + 1;
+    final atBottom = nextRow >= rows;
+    final blocked = !atBottom && _grid[nextRow][_fallingCol] != null;
+    if (atBottom || blocked) {
+      _lockLetter();
     } else {
       setState(() {
-        _isListening = false;
+        _fallingRow += 1;
       });
-      await _speech.stop();
-      if (_textController.text.trim().isNotEmpty) {
-        _translate(_textController.text);
+    }
+  }
+
+  void _lockLetter() {
+    final r = _fallingRow.floor();
+    setState(() {
+      _grid[r][_fallingCol] = _fallingLetter;
+    });
+    _checkWordsAndClear();
+    _spawnLetter();
+  }
+
+  void _moveLeft() {
+    if (_gameOver) return;
+    final r = _fallingRow.floor();
+    if (_fallingCol > 0 && (r >= rows || _grid[r][_fallingCol - 1] == null)) {
+      setState(() {
+        _fallingCol--;
+      });
+    }
+  }
+
+  void _moveRight() {
+    if (_gameOver) return;
+    final r = _fallingRow.floor();
+    if (_fallingCol < cols - 1 && (r >= rows || _grid[r][_fallingCol + 1] == null)) {
+      setState(() {
+        _fallingCol++;
+      });
+    }
+  }
+
+  void _dropFast() {
+    if (_gameOver) return;
+    int r = _fallingRow.floor();
+    while (r + 1 < rows && _grid[r + 1][_fallingCol] == null) {
+      r++;
+    }
+    setState(() {
+      _fallingRow = r.toDouble();
+    });
+    _lockLetter();
+  }
+
+  // Cherche tous les mots (horizontaux et verticaux) présents dans la grille,
+  // les efface, puis applique la gravité pour combler les trous.
+  void _checkWordsAndClear() {
+    final Set<String> toClear = {};
+
+    // Lignes horizontales
+    for (int r = 0; r < rows; r++) {
+      final rowStr = List.generate(cols, (c) => _grid[r][c] ?? '.').join();
+      for (int start = 0; start < cols; start++) {
+        for (int end = start + 3; end <= cols; end++) {
+          final segment = rowStr.substring(start, end);
+          if (!segment.contains('.') && _wordList.contains(segment)) {
+            for (int c = start; c < end; c++) {
+              toClear.add("$r,$c");
+            }
+          }
+        }
       }
     }
+
+    // Colonnes verticales
+    for (int c = 0; c < cols; c++) {
+      final colStr = List.generate(rows, (r) => _grid[r][c] ?? '.').join();
+      for (int start = 0; start < rows; start++) {
+        for (int end = start + 3; end <= rows; end++) {
+          final segment = colStr.substring(start, end);
+          if (!segment.contains('.') && _wordList.contains(segment)) {
+            for (int r = start; r < end; r++) {
+              toClear.add("$r,$c");
+            }
+          }
+        }
+      }
+    }
+
+    if (toClear.isEmpty) return;
+
+    setState(() {
+      for (final key in toClear) {
+        final parts = key.split(',');
+        final r = int.parse(parts[0]);
+        final c = int.parse(parts[1]);
+        _grid[r][c] = null;
+      }
+      _score += toClear.length * 10;
+    });
+
+    _applyGravity();
+  }
+
+  void _applyGravity() {
+    setState(() {
+      for (int c = 0; c < cols; c++) {
+        final letters = <String>[];
+        for (int r = 0; r < rows; r++) {
+          if (_grid[r][c] != null) letters.add(_grid[r][c]!);
+        }
+        for (int r = 0; r < rows; r++) {
+          _grid[r][c] = null;
+        }
+        int writeRow = rows - 1;
+        for (int i = letters.length - 1; i >= 0; i--) {
+          _grid[writeRow][c] = letters[i];
+          writeRow--;
+        }
+      }
+    });
+    // Une chute peut recréer un mot : on revérifie une fois.
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) _checkWordsAndClear();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1B1D2A),
       appBar: AppBar(
-        title: const Text('App Langues Vocale'),
+        title: const Text('Lettres Tombantes'),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4.0),
+            padding: const EdgeInsets.only(right: 16),
             child: Center(
-              child: DropdownButton<Character>(
-                value: _selectedCharacter,
-                dropdownColor: Colors.blue,
-                underline: const SizedBox(),
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                onChanged: (Character? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      _selectedCharacter = newValue;
-                    });
-                  }
-                },
-                items: characters.map<DropdownMenuItem<Character>>((Character c) {
-                  return DropdownMenuItem<Character>(
-                    value: c,
-                    child: Text(c.emoji + " " + c.name),
-                  );
-                }).toList(),
+              child: Text(
+                "Score : $_score",
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Mode inversé (chats en ${_selectedLanguage == "Anglais" ? "français" : "anglais"})",
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  Switch(
-                    value: _selectedLanguage == "Français",
-                    activeColor: Colors.indigo,
-                    onChanged: (v) {
-                      setState(() {
-                        _selectedLanguage = v ? "Français" : "Anglais";
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            // Section héro : les 4 chats sont l'identité visuelle de l'app
-            Container(
-              width: double.infinity,
-              height: 300,
-              color: Colors.indigo.shade50,
-              child: CatsHero(
-                language: _selectedLanguage,
-                resetSignal: _catsResetSignal,
-                onReset: () {
-                  setState(() {
-                    _catsResetSignal++;
-                  });
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: _textController,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      hintText: "Tapez ou parlez, en français ou en anglais...",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _listen,
-                        child: CircleAvatar(
-                          radius: 26,
-                          backgroundColor: _isListening ? Colors.red : Colors.indigo,
-                          child: const Icon(Icons.mic, color: Colors.white, size: 26),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _translate(_textController.text),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text("Traduire"),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_isTranslating)
-                    const Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  if (_errorText != null)
-                    Text(_errorText!, style: const TextStyle(color: Colors.red)),
-                  if (_translation != null)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.indigo.shade100),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+            Expanded(
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: cols / rows,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final cellSize = constraints.maxWidth / cols;
+                      return Stack(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _translation!,
-                                  style: const TextStyle(
-                                      fontSize: 20, fontWeight: FontWeight.w600),
+                          Container(color: const Color(0xFF10121C)),
+                          for (int r = 0; r < rows; r++)
+                            for (int c = 0; c < cols; c++)
+                              if (_grid[r][c] != null)
+                                Positioned(
+                                  left: c * cellSize,
+                                  top: r * cellSize,
+                                  width: cellSize,
+                                  height: cellSize,
+                                  child: _LetterCell(letter: _grid[r][c]!, cellSize: cellSize),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.volume_up, color: Colors.indigo),
-                                onPressed: () async {
-                                  await _tts.setLanguage(_selectedCharacter.ttsLocale);
-                                  await _tts.setPitch(_selectedCharacter.pitch);
-                                  await _tts.setSpeechRate(_selectedCharacter.rate);
-                                  await _tts.speak(_translation!);
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: _loadingSynonyms ? null : _fetchSynonyms,
-                              icon: const Icon(Icons.sync_alt, size: 18),
-                              label: const Text("Synonymes"),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.indigo,
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(0, 32),
+                          if (!_gameOver)
+                            Positioned(
+                              left: _fallingCol * cellSize,
+                              top: _fallingRow * cellSize,
+                              width: cellSize,
+                              height: cellSize,
+                              child: _LetterCell(
+                                letter: _fallingLetter,
+                                cellSize: cellSize,
+                                falling: true,
                               ),
                             ),
-                          ),
-                          if (_loadingSynonyms)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 4),
-                              child: SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            ),
-                          if (_synonyms != null && _synonyms!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: _synonyms!
-                                    .map((s) => Chip(
-                                          label: Text(s, style: const TextStyle(fontSize: 12)),
-                                          backgroundColor: Colors.white,
-                                          side: BorderSide(color: Colors.indigo.shade100),
-                                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ))
-                                    .toList(),
-                              ),
-                            )
-                          else if (_synonyms != null && _synonyms!.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 4),
-                              child: Text(
-                                "Aucun synonyme trouvé.",
-                                style: TextStyle(fontSize: 12, color: Colors.black45),
+                          if (_gameOver)
+                            Positioned.fill(
+                              child: Container(
+                                color: Colors.black.withOpacity(0.75),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        "Partie terminée",
+                                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Score : $_score",
+                                        style: const TextStyle(color: Colors.white70, fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton(
+                                        onPressed: () => setState(() => _startNewGame()),
+                                        child: const Text("Rejouer"),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                         ],
-                      ),
-                    ),
-                  if (_translationHistory.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8, bottom: 6),
-                      child: Text(
-                        "Historique",
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    ..._translationHistory.map(
-                      (entry) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              entry["input"]!,
-                              style: const TextStyle(fontSize: 13, color: Colors.black54),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              entry["output"]!,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _ControlButton(icon: Icons.arrow_back, onTap: _moveLeft),
+                  _ControlButton(icon: Icons.arrow_downward, onTap: _dropFast),
+                  _ControlButton(icon: Icons.arrow_forward, onTap: _moveRight),
                 ],
               ),
             ),
@@ -1334,4 +351,52 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _LetterCell extends StatelessWidget {
+  final String letter;
+  final double cellSize;
+  final bool falling;
+  const _LetterCell({required this.letter, required this.cellSize, this.falling = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(cellSize * 0.04),
+      child: Container(
+        decoration: BoxDecoration(
+          color: falling ? Colors.amber.shade600 : Colors.indigo.shade400,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.black26, width: 1),
+        ),
+        child: Center(
+          child: Text(
+            letter,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: cellSize * 0.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ControlButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _ControlButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: CircleAvatar(
+        radius: 30,
+        backgroundColor: Colors.indigo,
+        child: Icon(icon, color: Colors.white, size: 28),
+      ),
+    );
+  }
+}
 
