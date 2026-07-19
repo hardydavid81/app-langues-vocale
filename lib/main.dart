@@ -577,14 +577,14 @@ class WalkingCat extends StatefulWidget {
   final String bankType;
   final bool facingRight;
   final Size catSize;
-  final bool reversedMode;
+  final int resetSignal;
   const WalkingCat({
     super.key,
     required this.language,
     required this.bankType,
     this.facingRight = true,
     this.catSize = const Size(60, 66),
-    this.reversedMode = false,
+    this.resetSignal = 0,
   });
 
   @override
@@ -594,48 +594,8 @@ class WalkingCat extends StatefulWidget {
 class _WalkingCatState extends State<WalkingCat> {
   final FlutterTts _catTts = FlutterTts();
   Map<String, String>? _bubbleWord;
-  final List<Map<String, String>> _history = [];
-  int _historyIndex = -1;
   bool _revealed = false;
   int _bubbleGen = 0;
-  String? _scrambledHint;
-  List<String>? _options;
-  String? _selectedOption;
-
-  List<String> _buildOptions(Map<String, String> correct) {
-    final bank = _bank[widget.language] ?? _bank["Anglais"]!;
-    final pool = bank.where((e) => e["word"] != correct["word"]).toList()
-      ..shuffle(_rng);
-    final distractors = pool.take(2).map((e) => e["word"]!).toList();
-    final opts = [correct["word"]!, ...distractors];
-    opts.shuffle(_rng);
-    return opts;
-  }
-
-  String _scrambleWord(String word) {
-    final chars = word.split('');
-    final letterPositions = <int>[];
-    final letters = <String>[];
-    for (int i = 0; i < chars.length; i++) {
-      if (RegExp(r'[A-Za-zÀ-ÿ]').hasMatch(chars[i])) {
-        letterPositions.add(i);
-        letters.add(chars[i]);
-      }
-    }
-    if (letters.length > 1) {
-      String shuffled;
-      int attempts = 0;
-      do {
-        letters.shuffle(_rng);
-        shuffled = letters.join();
-        attempts++;
-      } while (shuffled == word.replaceAll(RegExp(r'[^A-Za-zÀ-ÿ]'), '') && attempts < 5);
-    }
-    for (int i = 0; i < letterPositions.length; i++) {
-      chars[letterPositions[i]] = letters[i];
-    }
-    return chars.join();
-  }
 
   Map<String, List<Map<String, String>>> get _bank {
     switch (widget.bankType) {
@@ -715,6 +675,17 @@ class _WalkingCatState extends State<WalkingCat> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant WalkingCat oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.resetSignal != oldWidget.resetSignal) {
+      _bubbleGen++;
+      setState(() {
+        _bubbleWord = null;
+      });
+    }
+  }
+
   void _scheduleAutoHide(int gen) {
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted && gen == _bubbleGen) {
@@ -730,47 +701,12 @@ class _WalkingCatState extends State<WalkingCat> {
     final chosen = words[_rng.nextInt(words.length)];
     final myGen = ++_bubbleGen;
     setState(() {
-      _history.add(chosen);
-      _historyIndex = _history.length - 1;
       _bubbleWord = chosen;
-      _revealed = !widget.reversedMode;
-      _scrambledHint = widget.reversedMode ? _scrambleWord(chosen["word"]!) : null;
-      _options = widget.reversedMode ? _buildOptions(chosen) : null;
-      _selectedOption = null;
-    });
-    if (!widget.reversedMode) {
-      final locale = languageLocales[widget.language] ?? "en-US";
-      await _catTts.setLanguage(locale);
-      await _catTts.speak(chosen["word"]!);
-      _scheduleAutoHide(myGen);
-    }
-    // En mode inversé, on attend que l'utilisateur choisisse une réponse
-    // parmi le QCM avant de révéler le mot et de programmer la disparition.
-  }
-
-  void _onSelectOption(String option) async {
-    if (_selectedOption != null) return;
-    final myGen = _bubbleGen;
-    setState(() {
-      _selectedOption = option;
       _revealed = true;
     });
     final locale = languageLocales[widget.language] ?? "en-US";
     await _catTts.setLanguage(locale);
-    await _catTts.speak(_bubbleWord!["word"]!);
-    _scheduleAutoHide(myGen);
-  }
-
-  void _onBack() {
-    if (_historyIndex <= 0) return;
-    final myGen = ++_bubbleGen;
-    setState(() {
-      _historyIndex--;
-      _bubbleWord = _history[_historyIndex];
-      _revealed = true;
-      _selectedOption = null;
-      _options = null;
-    });
+    await _catTts.speak(chosen["word"]!);
     _scheduleAutoHide(myGen);
   }
 
@@ -833,111 +769,27 @@ class _WalkingCatState extends State<WalkingCat> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (widget.reversedMode && !_revealed) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _bubbleWord!["fr"]!,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                ),
-                                if (_scrambledHint != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      _scrambledHint!,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.indigo.shade300,
-                                        letterSpacing: 2,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          ...?_options?.map(
-                            (opt) => GestureDetector(
-                              onTap: () => _onSelectOption(opt),
-                              behavior: HitTestBehavior.opaque,
-                              child: Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(top: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                color: Colors.indigo,
-                                child: Text(
-                                  opt,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 11, color: Colors.white),
-                                ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _bubbleWord!["word"]!,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
-                            ),
+                              Text(
+                                _bubbleWord!["fr"]!,
+                                style: const TextStyle(fontSize: 11, color: Colors.black54),
+                              ),
+                            ],
                           ),
-                        ] else
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _bubbleWord!["word"]!,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                ),
-                                Text(
-                                  _bubbleWord!["fr"]!,
-                                  style: const TextStyle(fontSize: 11, color: Colors.black54),
-                                ),
-                                if (_selectedOption != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      _selectedOption == _bubbleWord!["word"]
-                                          ? "✅ Bravo !"
-                                          : "❌ Tu avais dit : $_selectedOption",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: _selectedOption == _bubbleWord!["word"]
-                                            ? Colors.green.shade700
-                                            : Colors.red.shade700,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
-        if (_historyIndex > 0)
-          Positioned(
-            top: widget.catSize.height * 0.4,
-            left: widget.facingRight ? widget.catSize.width * 0.78 : null,
-            right: widget.facingRight ? null : widget.catSize.width * 0.78,
-            child: GestureDetector(
-              onTap: _onBack,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.indigo,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-                  ],
-                ),
-                child: const Icon(Icons.undo, size: 18, color: Colors.white),
-              ),
             ),
           ),
       ],
@@ -947,8 +799,14 @@ class _WalkingCatState extends State<WalkingCat> {
 
 class CatsHero extends StatelessWidget {
   final String language;
-  final bool reversedMode;
-  const CatsHero({super.key, required this.language, this.reversedMode = false});
+  final int resetSignal;
+  final VoidCallback onReset;
+  const CatsHero({
+    super.key,
+    required this.language,
+    this.resetSignal = 0,
+    required this.onReset,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -963,34 +821,55 @@ class CatsHero extends StatelessWidget {
             bankType: bankType,
             facingRight: facingRight,
             catSize: catSize,
-            reversedMode: reversedMode,
+            resetSignal: resetSignal,
           ),
         ),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                cell("mots", false),
-                cell("chiffres", true),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    cell("mots", false),
+                    cell("chiffres", true),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    cell("expressions", false),
+                    cell("verbes", true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: onReset,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.indigo, width: 2),
+              boxShadow: const [
+                BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
               ],
             ),
+            child: const Icon(Icons.refresh, color: Colors.indigo, size: 24),
           ),
-          Expanded(
-            child: Row(
-              children: [
-                cell("expressions", false),
-                cell("verbes", true),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1011,14 +890,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _translation;
   String? _errorText;
   List<String>? _synonyms;
+  final List<Map<String, String>> _translationHistory = [];
   bool _loadingSynonyms = false;
 
-  final List<String> _languages = [
-    "Anglais",
-    "Français",
-  ];
   String _selectedLanguage = "Anglais";
-  bool _reversedMode = false;
+  int _catsResetSignal = 0;
   Character _selectedCharacter = characters[0];
 
   @override
@@ -1051,7 +927,7 @@ class _HomeScreenState extends State<HomeScreen> {
               "parts": [
                 {
                   "text":
-                      "Traduis integralement le texte suivant entre le francais et l'anglais : si le texte est en francais, traduis-le en anglais ; si le texte est en anglais, traduis-le en francais. Ne raccourcis jamais la phrase, traduis-la en entier du debut a la fin. Reponds UNIQUEMENT avec la traduction complete, sans aucune explication, sans guillemets. Texte : " +
+                      "Traduis integralement le texte suivant entre le francais et l'anglais : si le texte est en francais, traduis-le en anglais ; si le texte est en anglais, traduis-le en francais. Ne raccourcis jamais la phrase, traduis-la en entier du debut a la fin. Reponds UNIQUEMENT sous la forme suivante, sans rien d'autre : <code>|<traduction> où <code> est 'en' si la traduction est en anglais, ou 'fr' si elle est en francais, et <traduction> est la traduction complete sans guillemets. Texte : " +
                           trimmed
                 }
               ]
@@ -1083,18 +959,38 @@ class _HomeScreenState extends State<HomeScreen> {
           });
           return;
         }
+        String outputLocale = languageLocales["Anglais"]!;
+        final sepIndex = translated.indexOf('|');
+        if (sepIndex > 0 && sepIndex <= 3) {
+          final code = translated.substring(0, sepIndex).trim().toLowerCase();
+          translated = translated.substring(sepIndex + 1).trim();
+          if (code.startsWith('fr')) {
+            outputLocale = languageLocales["Français"]!;
+          } else if (code.startsWith('en')) {
+            outputLocale = languageLocales["Anglais"]!;
+          }
+        }
         setState(() {
           _translation = translated;
           _isTranslating = false;
+          _translationHistory.insert(0, {"input": trimmed, "output": translated});
+          if (_translationHistory.length > 20) {
+            _translationHistory.removeLast();
+          }
         });
-        await _tts.setLanguage(_selectedCharacter.ttsLocale);
+        await _tts.setLanguage(outputLocale);
         await _tts.setPitch(_selectedCharacter.pitch);
         await _tts.setSpeechRate(_selectedCharacter.rate);
         await _tts.speak(translated);
       } else {
         setState(() {
-          _errorText =
-              "Erreur API code " + response.statusCode.toString();
+          if (response.statusCode == 429) {
+            _errorText =
+                "Trop de demandes de traduction d'un coup. Attends une minute et réessaie.";
+          } else {
+            _errorText =
+                "Erreur API code " + response.statusCode.toString();
+          }
           _isTranslating = false;
         });
       }
@@ -1220,31 +1116,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: Center(
-              child: DropdownButton<String>(
-                value: _selectedLanguage,
-                dropdownColor: Colors.blue,
-                underline: const SizedBox(),
-                icon: const Icon(Icons.language, color: Colors.white),
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      _selectedLanguage = newValue;
-                    });
-                  }
-                },
-                items: _languages.map<DropdownMenuItem<String>>((String lang) {
-                  return DropdownMenuItem<String>(
-                    value: lang,
-                    child: Text(lang),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -1255,16 +1126,16 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Mode inversé (deviner)",
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  Text(
+                    "Mode inversé (chats en ${_selectedLanguage == "Anglais" ? "français" : "anglais"})",
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   Switch(
-                    value: _reversedMode,
+                    value: _selectedLanguage == "Français",
                     activeColor: Colors.indigo,
                     onChanged: (v) {
                       setState(() {
-                        _reversedMode = v;
+                        _selectedLanguage = v ? "Français" : "Anglais";
                       });
                     },
                   ),
@@ -1276,7 +1147,15 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               height: 300,
               color: Colors.indigo.shade50,
-              child: CatsHero(language: _selectedLanguage, reversedMode: _reversedMode),
+              child: CatsHero(
+                language: _selectedLanguage,
+                resetSignal: _catsResetSignal,
+                onReset: () {
+                  setState(() {
+                    _catsResetSignal++;
+                  });
+                },
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1411,6 +1290,40 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                  if (_translationHistory.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8, bottom: 6),
+                      child: Text(
+                        "Historique",
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    ..._translationHistory.map(
+                      (entry) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry["input"]!,
+                              style: const TextStyle(fontSize: 13, color: Colors.black54),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              entry["output"]!,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
